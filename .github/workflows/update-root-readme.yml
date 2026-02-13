@@ -1,0 +1,85 @@
+name: Update Root README Versions
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'feat/**'
+    paths:
+      - 'backend/build.gradle'
+      - 'frontend/package.json'
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract Backend Version
+        id: backend-version
+        run: |
+          if [ -f "backend/build.gradle" ]; then
+            VERSION=$(grep -E "^\s*version\s*=" backend/build.gradle | sed -E "s/.*version\s*=\s*['\"](.*)['\"].*/\1/" | tr -d '\n')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Backend version: $VERSION"
+          else
+            echo "version=Not available" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract Frontend Version
+        id: frontend-version
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            VERSION=$(grep -E '"version"' frontend/package.json | sed -E 's/.*"version"\s*:\s*"([^"]+)".*/\1/' | tr -d '\n')
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Frontend version: $VERSION"
+          else
+            echo "version=Not available" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Root README
+        run: |
+          BACKEND_VERSION="${{ steps.backend-version.outputs.version }}"
+          FRONTEND_VERSION="${{ steps.frontend-version.outputs.version }}"
+          
+          # README.md 읽기
+          README_CONTENT=$(cat README.md)
+          
+          # Backend 버전 업데이트
+          if [ "$BACKEND_VERSION" != "Not available" ]; then
+            README_CONTENT=$(echo "$README_CONTENT" | sed -E "s|(\*\*Backend\*\*: )[^\n]+|\1$BACKEND_VERSION|")
+          fi
+          
+          # Frontend 버전 업데이트
+          if [ "$FRONTEND_VERSION" != "Not available" ]; then
+            README_CONTENT=$(echo "$README_CONTENT" | sed -E "s|(\*\*Frontend\*\*: )[^\n]+|\1$FRONTEND_VERSION|")
+          fi
+          
+          # 업데이트된 내용을 파일에 쓰기
+          echo "$README_CONTENT" > README.md
+
+      - name: Check for changes
+        id: verify-changed-files
+        run: |
+          if [ -n "$(git status --porcelain README.md)" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.verify-changed-files.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "chore: 루트 README 버전 정보 자동 업데이트 [skip ci]"
+          git push

@@ -12,6 +12,11 @@
 - **포트폴리오**: `sevin.dev/portfolio` - Next.js 기반 포트폴리오 웹사이트
 - **블로그**: `sevin.dev/blog` - Spring Boot 기반 블로그 플랫폼 (***개발중***)
 
+## 📦 서비스 버전
+
+- **Backend**: 0.0.1-SNAPSHOT
+- **Frontend**: Not available
+
 ## 🏗️ 프로젝트 구조
 
 - [Backend](./backend/README.md) - Spring Boot 기반 블로그 백엔드 API
