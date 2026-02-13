@@ -244,7 +244,8 @@ task setupHook {
         }
         
         def postCommitHook = new File(gitHooksDir, 'post-commit')
-        def backendPath = project.rootDir.absolutePath.replace(rootDir.absolutePath + File.separator, '')
+        // backend 디렉토리 경로 계산 (루트 기준)
+        def backendDir = project.rootDir.name
         def hookContent = """#!/bin/sh
 # Git post-commit hook - Backend README 자동 업데이트
 
@@ -254,10 +255,10 @@ if echo "\$COMMIT_MSG" | grep -q "^chore: update README"; then
 fi
 
 # backend 디렉토리로 이동하여 실행
-cd ${backendPath.replace('\\', '/')} || exit 1
+cd ${backendDir} || exit 1
 ./gradlew updateReadme
 
-git add ${backendPath.replace('\\', '/')}/README.md ${backendPath.replace('\\', '/')}/CHANGELOG.md ${backendPath.replace('\\', '/')}/build.gradle
+git add ${backendDir}/README.md ${backendDir}/CHANGELOG.md ${backendDir}/build.gradle
 """
         
         postCommitHook.text = hookContent
