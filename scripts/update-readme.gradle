@@ -1,0 +1,264 @@
+// Gradle 스크립트로 README 자동 업데이트
+
+import java.nio.file.Files
+import java.nio.file.Paths
+
+def README_PATH = project.file('README.md')
+def CHANGELOG_PATH = project.file('CHANGELOG.md')
+def BUILD_GRADLE_PATH = project.file('build.gradle')
+
+// 버전 증가 규칙
+def VERSION_RULES = [
+    'feat': 'minor',
+    'fix': 'patch',
+    'refactor': 'patch',
+    'perf': 'patch',
+    'style': 'patch',
+    'docs': 'patch',
+    'chore': 'patch',
+    'test': 'patch'
+]
+
+// 버전 파싱 및 증가
+def incrementVersion(String version, String type, String commitMessage) {
+    def parts = version.replace('-SNAPSHOT', '').split('\\.')
+    def major = parts[0].toInteger()
+    def minor = parts.size() > 1 ? parts[1].toInteger() : 0
+    def patch = parts.size() > 2 ? parts[2].toInteger() : 0
+    
+    // 첫 배포 감지
+    if (major == 0 && minor == 0 && patch == 0) {
+        return '1.0.0'
+    }
+    
+    if (major == 0) {
+        def deployKeywords = ~/(?i)(배포|deploy|production|release|출시)/
+        if (deployKeywords.matcher(commitMessage).find()) {
+            return '1.0.0'
+        }
+    }
+    
+    def versionType = VERSION_RULES[type] ?: 'patch'
+    switch (versionType) {
+        case 'major':
+            return "${major + 1}.0.0"
+        case 'minor':
+            return "${major}.${minor + 1}.0"
+        case 'patch':
+            return "${major}.${minor}.${patch + 1}"
+        default:
+            return version
+    }
+}
+
+// 커밋 메시지에서 타입 추출
+def getCommitType(String message) {
+    def matcher = message =~ /^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:/
+    return matcher.find() ? matcher.group(1).toLowerCase() : null
+}
+
+// 최신 커밋 정보 가져오기
+def getLatestCommit() {
+    try {
+        def hash = 'git rev-parse HEAD'.execute().text.trim()
+        def message = 'git log -1 --pretty=%B'.execute().text.trim()
+        def date = 'git log -1 --pretty=%cd --date=short'.execute().text.trim()
+        return [hash: hash, message: message, date: date]
+    } catch (Exception e) {
+        println "Error getting commit info: ${e.message}"
+        return null
+    }
+}
+
+// build.gradle에서 버전 읽기
+def getCurrentVersion() {
+    def content = BUILD_GRADLE_PATH.text
+    def matcher = content =~ /version\s*=\s*['"](.+?)['"]/
+    return matcher.find() ? matcher.group(1) : '0.0.1-SNAPSHOT'
+}
+
+// build.gradle 버전 업데이트
+def updateBuildGradleVersion(String newVersion) {
+    def content = BUILD_GRADLE_PATH.text
+    content = content.replaceAll(/version\s*=\s*['"].+?['"]/, "version = '${newVersion}'")
+    BUILD_GRADLE_PATH.text = content
+}
+
+// README 업데이트 (최근 5개만)
+def updateREADME(Map commit, String newVersion) {
+    if (!README_PATH.exists()) return false
+    
+    def readme = README_PATH.text
+    def commitType = getCommitType(commit.message)
+    
+    // 커밋 메시지에서 타입 제거
+    def commitMessage = commit.message
+    def typeMatch = commitMessage =~ /^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/i
+    if (typeMatch.find()) {
+        commitMessage = typeMatch.group(3).trim()
+    }
+    
+    def commitTypeLabel = [
+        'feat': '✨ 기능 추가',
+        'fix': '🐛 버그 수정',
+        'refactor': '♻️ 리팩토링',
+        'perf': '⚡ 성능 개선',
+        'style': '💄 스타일 변경',
+        'docs': '📝 문서 수정',
+        'chore': '🔧 기타',
+        'test': '✅ 테스트'
+    ][commitType] ?: '📝 변경사항'
+    
+    def newEntry = """### v${newVersion} (${commit.date})
+
+#### ${commitTypeLabel}
+- ✅ ${commitMessage}
+
+"""
+    
+    // "## 📅 최근 변경사항" 섹션 찾기
+    def sectionRegex = /(## 📅 최근 변경사항\s*\n)/
+    def matcher = readme =~ sectionRegex
+    
+    if (matcher.find()) {
+        def insertIndex = matcher.end()
+        // 기존 항목들 읽기
+        def restOfReadme = readme.substring(insertIndex)
+        def existingEntries = []
+        def entryPattern = ~/(### v\d+\.\d+\.\d+.*?\n\n)/
+        def entryMatcher = entryPattern.matcher(restOfReadme)
+        
+        while (entryMatcher.find() && existingEntries.size() < 4) {
+            existingEntries.add(entryMatcher.group(1))
+        }
+        
+        // 새 항목 + 기존 4개만 유지
+        def updatedSection = newEntry + existingEntries.join('')
+        
+        // "---" 전까지의 내용 찾기
+        def separatorIndex = restOfReadme.indexOf('---')
+        if (separatorIndex == -1) separatorIndex = restOfReadme.length()
+        
+        def beforeSection = readme.substring(0, insertIndex)
+        def afterSection = restOfReadme.substring(separatorIndex)
+        
+        README_PATH.text = beforeSection + updatedSection + afterSection
+    } else {
+        // 섹션이 없으면 추가
+        def changelogLink = readme.indexOf('## 📅 최근 변경사항')
+        if (changelogLink == -1) {
+            README_PATH.text = readme + "\n## 📅 최근 변경사항\n\n${newEntry}---\n\n"
+        }
+    }
+    
+    return true
+}
+
+// CHANGELOG.md 업데이트
+def updateCHANGELOG(Map commit, String newVersion) {
+    if (!CHANGELOG_PATH.exists()) {
+        CHANGELOG_PATH.text = "# Changelog\n\n모든 변경사항은 이 파일에 기록됩니다.\n\n## 📅 버전별 개발 기록\n\n"
+    }
+    
+    def changelog = CHANGELOG_PATH.text
+    def commitType = getCommitType(commit.message)
+    
+    def commitMessage = commit.message
+    def typeMatch = commitMessage =~ /^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/i
+    if (typeMatch.find()) {
+        commitMessage = typeMatch.group(3).trim()
+    }
+    
+    def commitTypeLabel = [
+        'feat': '✨ 기능 추가',
+        'fix': '🐛 버그 수정',
+        'refactor': '♻️ 리팩토링',
+        'perf': '⚡ 성능 개선',
+        'style': '💄 스타일 변경',
+        'docs': '📝 문서 수정',
+        'chore': '🔧 기타',
+        'test': '✅ 테스트'
+    ][commitType] ?: '📝 변경사항'
+    
+    def newEntry = """### v${newVersion} (${commit.date})
+
+#### ${commitTypeLabel}
+- ✅ ${commitMessage}
+
+"""
+    
+    def sectionRegex = /(## 📅 버전별 개발 기록\s*\n)/
+    def matcher = changelog =~ sectionRegex
+    
+    if (matcher.find()) {
+        def insertIndex = matcher.end()
+        CHANGELOG_PATH.text = changelog.substring(0, insertIndex) + newEntry + changelog.substring(insertIndex)
+    }
+    
+    return true
+}
+
+task updateReadme {
+    doLast {
+        def commit = getLatestCommit()
+        if (!commit) {
+            throw new GradleException('커밋 정보를 가져올 수 없습니다.')
+        }
+        
+        def currentVersion = getCurrentVersion()
+        def commitType = getCommitType(commit.message)
+        
+        if (!commitType) {
+            println '⚠️  커밋 메시지에 타입이 없습니다. 패치 버전으로 증가합니다.'
+        }
+        
+        def versionType = VERSION_RULES[commitType] ?: 'patch'
+        def newVersion = incrementVersion(currentVersion, commitType ?: 'chore', commit.message)
+        
+        updateBuildGradleVersion(newVersion)
+        println "📦 버전 업데이트: ${currentVersion} -> ${newVersion}"
+        
+        if (updateREADME(commit, newVersion)) {
+            println "✅ README 업데이트 완료"
+        }
+        
+        if (updateCHANGELOG(commit, newVersion)) {
+            println "✅ CHANGELOG 업데이트 완료"
+        }
+        
+        println '✅ 모든 업데이트 완료!'
+    }
+}
+
+task setupHook {
+    doLast {
+        def gitHooksDir = new File(project.rootDir, '.git/hooks')
+        if (!gitHooksDir.exists()) {
+            throw new GradleException('.git/hooks 디렉토리를 찾을 수 없습니다.')
+        }
+        
+        def postCommitHook = new File(gitHooksDir, 'post-commit')
+        def hookContent = """#!/bin/sh
+# Git post-commit hook - README 자동 업데이트
+
+COMMIT_MSG=\$(git log -1 --pretty=%B)
+if echo "\$COMMIT_MSG" | grep -q "^chore: update README"; then
+  exit 0
+fi
+
+./gradlew updateReadme
+
+git add README.md CHANGELOG.md build.gradle
+"""
+        
+        postCommitHook.text = hookContent
+        postCommitHook.setExecutable(true)
+        
+        println '✅ Git post-commit hook이 설정되었습니다!'
+        println ''
+        println '이제 커밋할 때마다 자동으로:'
+        println '  1. build.gradle의 버전이 업데이트됩니다'
+        println '  2. README.md에 최근 커밋 내역이 추가됩니다'
+        println '  3. CHANGELOG.md에 전체 기록이 추가됩니다'
+    }
+}
