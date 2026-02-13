@@ -1,1 +1,43 @@
-services: {}
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: blog-postgres
+    environment:
+      POSTGRES_DB: blog_local
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      DB_URL: jdbc:postgresql://postgres:5432/blog_local
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      NOTION_API_TOKEN: ${NOTION_API_TOKEN:-}
+      NOTION_DATABASE_ID: ${NOTION_DATABASE_ID:-}
+      NOTION_DEV_NOTE_ENABLED: ${NOTION_DEV_NOTE_ENABLED:-true}
+      NOTION_DEV_NOTE_SCHEDULE: ${NOTION_DEV_NOTE_SCHEDULE:-0 0 23 * * *}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # .env 파일을 마운트 (선택사항)
+      - ./.env.local:/app/.env.local:ro
+
+volumes:
+  postgres_data:

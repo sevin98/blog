@@ -1,0 +1,14 @@
+.gradle
+build
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+.git
+.gitignore
+HELP.md
+gradlew
+gradlew.bat
+.env.local
+.env.production
