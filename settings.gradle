@@ -1,3 +1,1 @@
-rootProject.name = 'blog-platform'
-
-include 'backend'
+rootProject.name = 'blog'
