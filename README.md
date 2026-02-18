@@ -1,37 +1,67 @@
-# Blog Platform
+# Blog Backend
 
-포트폴리오와 블로그를 하나의 도메인(`sevin.dev`)으로 통합하는 슈퍼앱 프로젝트
+개인 블로그 플랫폼 백엔드 서버
 
-🌐 **사이트**: [https://sevin.dev](https://sevin.dev)
-- 현재 portfolio (개발 완료) / blog (개발중)
+🌐 **사이트**: [https://sevin.dev/blog](https://sevin.dev/blog)
 
 ## 📋 프로젝트 개요
 
-개인 포트폴리오와 블로그 플랫폼을 통합하여 하나의 도메인으로 운영하는 프로젝트입니다.
-
-- **포트폴리오**: `sevin.dev/portfolio` - Next.js 기반 포트폴리오 웹사이트
-- **블로그**: `sevin.dev/blog` - Spring Boot 기반 블로그 플랫폼 (***개발중***)
-
-## 📦 서비스 버전
-
-- **Backend**: 0.0.1-SNAPSHOT
-- **Frontend**: Not available
-
-## 🏗️ 프로젝트 구조
-
-- [Backend](./backend/README.md) - Spring Boot 기반 블로그 백엔드 API
-- Frontend - Next.js 기반 포트폴리오/블로그 프론트엔드 (예정)
+Spring Boot 기반의 개인 블로그 플랫폼 백엔드 서버로, 포트폴리오와 블로그를 하나의 도메인으로 통합하는 슈퍼앱의 백엔드를 담당합니다.
 
 ## 🛠 기술 스택
 
-### Backend
-- Spring Boot, Java, PostgreSQL, Docker
-- AWS EC2 배포
+- **Framework**: Spring Boot
+- **Language**: Java
+- **Database**: PostgreSQL
+- **Build Tool**: Gradle
+- **Container**: Docker
+- **Deployment**: AWS EC2
 
-### Frontend
-- Next.js, React, TypeScript, Tailwind CSS
-- Vercel 배포
+## 🔄 자동 버전 관리 시스템
 
-## 📚 문서
+이 프로젝트는 커밋할 때마다 자동으로 버전과 README를 업데이트합니다.
 
-- [Backend README](./backend/README.md) - 백엔드 상세 문서 및 최근 변경사항
+### 버전 증가 규칙
+
+- **feat**: 마이너 버전 증가 (1.0.0 → 1.1.0)
+- **fix, refactor, perf, style, docs, chore, test**: 패치 버전 증가 (1.0.0 → 1.0.1)
+- **첫 배포**: 0.0.1 → 1.0.0으로 자동 설정
+
+### 사용 방법
+
+1. **Git Hook 설정** (최초 1회만 실행)
+   ```bash
+   ./gradlew setupHook
+   ```
+
+2. **커밋 시 자동 업데이트**
+   - 커밋 메시지를 컨벤션에 맞게 작성 (예: `feat: 새로운 기능 추가`)
+   - 커밋 후 자동으로:
+     - `build.gradle`의 버전이 업데이트됩니다
+     - `README.md`에 최근 커밋 내역이 추가됩니다
+     - `CHANGELOG.md`에 전체 기록이 추가됩니다
+
+3. **수동 업데이트** (필요시)
+   ```bash
+   ./gradlew updateReadme
+   ```
+
+### 커밋 메시지 컨벤션
+
+- `feat: 새로운 기능 추가`
+- `fix: 버그 수정`
+- `refactor: 코드 리팩토링`
+- `perf: 성능 개선`
+- `style: 스타일 변경`
+- `docs: 문서 수정`
+- `chore: 기타 작업`
+
+---
+
+## 📅 최근 변경사항
+
+<!-- 최근 5개 버전만 표시됩니다. 전체 기록은 CHANGELOG.md를 참고하세요. -->
+
+---
+
+전체 변경사항은 [CHANGELOG.md](./CHANGELOG.md)를 참고하세요.
