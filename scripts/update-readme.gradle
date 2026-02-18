@@ -93,7 +93,7 @@ def updateREADME(Map commit, String newVersion) {
     
     // 커밋 메시지에서 타입 제거
     def commitMessage = commit.message
-    def typeMatch = commitMessage =~ /^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/i
+    def typeMatch = commitMessage =~ /(?i)^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/
     if (typeMatch.find()) {
         commitMessage = typeMatch.group(3).trim()
     }
@@ -164,7 +164,7 @@ def updateCHANGELOG(Map commit, String newVersion) {
     def commitType = getCommitType(commit.message)
     
     def commitMessage = commit.message
-    def typeMatch = commitMessage =~ /^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/i
+    def typeMatch = commitMessage =~ /(?i)^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s*(.+)/
     if (typeMatch.find()) {
         commitMessage = typeMatch.group(3).trim()
     }
@@ -232,33 +232,23 @@ task updateReadme {
 
 task setupHook {
     doLast {
-        // 루트 디렉토리 찾기 (.git이 있는 곳)
-        def rootDir = project.rootDir
-        while (rootDir.parentFile != null && !new File(rootDir, '.git').exists()) {
-            rootDir = rootDir.parentFile
-        }
-        
-        def gitHooksDir = new File(rootDir, '.git/hooks')
+        def gitHooksDir = new File(project.rootDir, '.git/hooks')
         if (!gitHooksDir.exists()) {
             throw new GradleException('.git/hooks 디렉토리를 찾을 수 없습니다.')
         }
         
         def postCommitHook = new File(gitHooksDir, 'post-commit')
-        // backend 디렉토리 경로 계산 (루트 기준)
-        def backendDir = project.rootDir.name
         def hookContent = """#!/bin/sh
-# Git post-commit hook - Backend README 자동 업데이트
+# Git post-commit hook - README 자동 업데이트
 
 COMMIT_MSG=\$(git log -1 --pretty=%B)
 if echo "\$COMMIT_MSG" | grep -q "^chore: update README"; then
   exit 0
 fi
 
-# backend 디렉토리로 이동하여 실행
-cd ${backendDir} || exit 1
 ./gradlew updateReadme
 
-git add ${backendDir}/README.md ${backendDir}/CHANGELOG.md ${backendDir}/build.gradle
+git add README.md CHANGELOG.md build.gradle
 """
         
         postCommitHook.text = hookContent
@@ -267,8 +257,8 @@ git add ${backendDir}/README.md ${backendDir}/CHANGELOG.md ${backendDir}/build.g
         println '✅ Git post-commit hook이 설정되었습니다!'
         println ''
         println '이제 커밋할 때마다 자동으로:'
-        println '  1. backend/build.gradle의 버전이 업데이트됩니다'
-        println '  2. backend/README.md에 최근 커밋 내역이 추가됩니다'
-        println '  3. backend/CHANGELOG.md에 전체 기록이 추가됩니다'
+        println '  1. build.gradle의 버전이 업데이트됩니다'
+        println '  2. README.md에 최근 커밋 내역이 추가됩니다'
+        println '  3. CHANGELOG.md에 전체 기록이 추가됩니다'
     }
 }
