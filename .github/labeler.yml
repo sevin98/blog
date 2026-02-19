@@ -1,0 +1,25 @@
+# 변경 파일 기반 라벨 자동 추가 규칙
+
+backend:
+  - src/main/java/**
+  - src/main/resources/**
+  - build.gradle
+  - Dockerfile
+  - compose.yaml
+
+config:
+  - .github/**
+  - .coderabbit.yaml
+  - application*.yml
+
+docs:
+  - README.md
+  - CHANGELOG.md
+  - docs/**
+
+test:
+  - src/test/**
+
+dependencies:
+  - build.gradle
+  - package.json

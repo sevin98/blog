@@ -1,0 +1,169 @@
+name: PR Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited]
+
+jobs:
+  # PR 제목 규칙 검증 (Conventional Commits)
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            style
+            docs
+            chore
+            test
+          scopes: |
+            backend
+            frontend
+            config
+            ci
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            PR 제목은 소문자로 시작해야 합니다.
+          wip: true
+
+  # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
+  auto-fill-pr-body:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened' && (github.event.pull_request.body == '' || contains(github.event.pull_request.body, '<!-- 커밋 로그가 자동으로 여기에 채워집니다 -->'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR Body from Commits
+        id: generate-body
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          # 커밋 로그 가져오기
+          COMMITS=$(git log --pretty=format:"- %s (%h)" ${BASE_SHA}..${HEAD_SHA} || echo "- 변경사항 없음")
+          
+          # PR 본문 생성
+          PR_BODY="## 📝 변경 사항
+          
+          $COMMITS
+          
+          ## 🔍 변경 이유
+          
+          <!-- 이 PR을 만든 이유를 설명해주세요 -->
+          
+          ## ✅ 체크리스트
+          
+          - [ ] 코드가 정상적으로 빌드됩니다
+          - [ ] 테스트가 통과합니다 (해당되는 경우)
+          - [ ] 문서가 업데이트되었습니다 (해당되는 경우)
+          - [ ] CodeRabbit 리뷰를 확인했습니다
+          
+          ## 🔗 관련 이슈
+          
+          <!-- 관련 이슈가 있다면 링크해주세요 -->
+          Closes #"
+          
+          # 멀티라인 출력
+          {
+            echo 'body<<EOF'
+            echo "$PR_BODY"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Update PR Body
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.generate-body.outputs.body }}
+          edit-mode: replace
+          comment-id: ${{ github.event.pull_request.number }}
+
+  # 변경 파일 기반 라벨 자동 추가
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            src/main/java/**
+            src/main/resources/**
+            build.gradle
+            Dockerfile
+            compose.yaml
+
+      - name: Add Labels Based on Changes
+        uses: actions/labeler@v4
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+          sync-labels: true
+
+  # 자동 체크 코멘트
+  auto-check-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            src/main/java/**
+            src/test/java/**
+
+      - name: Check for Missing Tests
+        id: check-tests
+        run: |
+          CHANGED_JAVA=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | grep 'src/main/java' || true)
+          MISSING_TESTS=""
+          
+          if [ -n "$CHANGED_JAVA" ]; then
+            for file in $CHANGED_JAVA; do
+              # 테스트 파일 경로 생성
+              test_file=$(echo "$file" | sed 's|src/main/java|src/test/java|' | sed 's|\.java|Test.java|')
+              if [ ! -f "$test_file" ]; then
+                MISSING_TESTS="${MISSING_TESTS}- $file\n"
+              fi
+            done
+          fi
+          
+          if [ -n "$MISSING_TESTS" ]; then
+            echo "has_missing_tests=true" >> $GITHUB_OUTPUT
+            echo "missing_tests<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$MISSING_TESTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has_missing_tests=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post Check Comment
+        if: steps.check-tests.outputs.has_missing_tests == 'true'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ⚠️ 자동 체크 결과
+            
+            다음 파일에 대한 테스트가 누락된 것으로 보입니다:
+            
+            ${{ steps.check-tests.outputs.missing_tests }}
+            
+            테스트를 추가하는 것을 고려해주세요.
