@@ -49,5 +49,7 @@ jobs:
         if: success()
         with:
           name: build-artifacts
-          path: build/libs/*.jar
+          path: |
+            build/libs/*.jar
+            build/libs/*.war
           retention-days: 7
