@@ -18,8 +18,10 @@ jobs:
     permissions:
       pull-requests: write
       checks: write
+      issues: write
     steps:
       - name: Validate PR Title
+        id: validate
         uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,6 +45,46 @@ jobs:
           subjectPatternError: |
             PR 제목은 소문자로 시작해야 합니다.
           wip: true
+        continue-on-error: true
+
+      - name: Post Validation Error Comment
+        if: steps.validate.outcome == 'failure'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## ❌ PR 제목 검증 실패
+
+            현재 PR 제목: **`${{ github.event.pull_request.title }}`**
+
+            ### 문제점
+            PR 제목이 [Conventional Commits](https://www.conventionalcommits.org/) 형식을 따르지 않습니다.
+
+            ### 올바른 형식
+            ```
+            <type>: <subject>
+            ```
+
+            ### 사용 가능한 타입
+            - `feat`: 새로운 기능 추가
+            - `fix`: 버그 수정
+            - `refactor`: 코드 리팩토링
+            - `perf`: 성능 개선
+            - `style`: 코드 스타일 변경
+            - `docs`: 문서 수정
+            - `chore`: 기타 작업
+            - `test`: 테스트 추가/수정
+
+            ### 예시
+            - ✅ `feat: code-rabbit config 추가`
+            - ✅ `fix: PR 자동화 워크플로우 권한 수정`
+            - ✅ `refactor: 코드 구조 개선`
+            - ❌ `code-rabitt config 추가#3` (타입 누락)
+            - ❌ `Code-rabbit config 추가` (대문자 시작)
+
+            ### 해결 방법
+            PR 제목을 수정해주세요. 예: `feat: code-rabbit config 추가`
+          edit-mode: replace
 
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
   auto-fill-pr-body:
