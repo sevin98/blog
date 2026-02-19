@@ -2,7 +2,7 @@ name: PR Automation
 
 on:
   pull_request:
-    types: [opened, synchronize, edited]
+    types: [opened, synchronize, edited, reopened]
 
 # 워크플로우 권한 설정 (PR 코멘트 작성 및 라벨 추가를 위해 필요)
 permissions:
@@ -49,7 +49,7 @@ jobs:
 
       - name: Post Validation Error Comment
         if: steps.validate.outcome == 'failure'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
@@ -137,12 +137,11 @@ jobs:
           } >> $GITHUB_OUTPUT
 
       - name: Update PR Body
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: ${{ steps.generate-body.outputs.body }}
           edit-mode: replace
-          comment-id: ${{ github.event.pull_request.number }}
 
   # 변경 파일 기반 라벨 자동 추가
   auto-label:
@@ -158,7 +157,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add Labels Based on Changes
-        uses: actions/labeler@v4
+        uses: actions/labeler@v6
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
           configuration-path: .github/labeler.yml
@@ -178,7 +177,7 @@ jobs:
 
       - name: Get Changed Files
         id: changed-files
-        uses: tj-actions/changed-files@v40
+        uses: tj-actions/changed-files@v44
         with:
           files: |
             src/main/java/**
@@ -220,7 +219,7 @@ jobs:
 
       - name: Post Check Comment
         if: steps.check-tests.outputs.has_missing_tests == 'true'
-        uses: peter-evans/create-or-update-comment@v3
+        uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
