@@ -14,6 +14,8 @@ permissions:
 jobs:
   # PR 제목 규칙 검증 (Conventional Commits)
   validate-pr-title:
+    # 같은 레포지토리 내 브랜치에서 온 PR만 검증 (fork PR 제외)
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
