@@ -27,9 +27,9 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew clean build --no-daemon -Dorg.gradle.java.home=
+        run: ./gradlew clean build --no-daemon
         env:
-          GRADLE_OPTS: -Dorg.gradle.java.home=
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 || env.JAVA_HOME }}
 
       - name: List build artifacts
         run: |
