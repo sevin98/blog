@@ -20,13 +20,74 @@ jobs:
       pull-requests: write
       checks: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Check PR Title
+        id: validate
         uses: deepakputhraya/action-pr-title@master
+        continue-on-error: true
         with:
           # Conventional Commits 형식: <type>: <subject>
           # 허용 타입: feat, fix, refactor, perf, style, docs, chore, test
           regex: '^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+'
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log Validation Result
+        if: always()
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          VALIDATION_RESULT="${{ steps.validate.outcome }}"
+          
+          echo "## 🔍 PR 제목 검증 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR 제목**: \`${PR_TITLE}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$VALIDATION_RESULT" == "success" ]; then
+            echo "✅ **검증 결과**: 추출된 PR 제목이 검증 필터와 일치합니다. 문제없습니다." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**검증 규칙**: \`^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ PR 제목 검증 성공" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **검증 결과**: PR 제목이 검증 필터와 일치하지 않습니다." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**검증 규칙**: \`^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 올바른 형식" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "<type>: <subject>" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 사용 가능한 타입" >> $GITHUB_STEP_SUMMARY
+            echo "- \`feat\`: 새로운 기능 추가" >> $GITHUB_STEP_SUMMARY
+            echo "- \`fix\`: 버그 수정" >> $GITHUB_STEP_SUMMARY
+            echo "- \`refactor\`: 코드 리팩토링" >> $GITHUB_STEP_SUMMARY
+            echo "- \`perf\`: 성능 개선" >> $GITHUB_STEP_SUMMARY
+            echo "- \`style\`: 코드 스타일 변경" >> $GITHUB_STEP_SUMMARY
+            echo "- \`docs\`: 문서 수정" >> $GITHUB_STEP_SUMMARY
+            echo "- \`chore\`: 기타 작업" >> $GITHUB_STEP_SUMMARY
+            echo "- \`test\`: 테스트 추가/수정" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 예시" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`feat: 새로운 기능 추가\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`fix: 버그 수정\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`feat(backend): 백엔드 API 추가\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ \`새로운 기능 추가\` (타입 누락)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ PR 제목 검증 실패" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # 콘솔에도 출력
+          if [ "$VALIDATION_RESULT" == "success" ]; then
+            echo "✅ 추출된 PR 제목이 검증 필터와 일치합니다. 문제없습니다."
+            echo "PR 제목: ${PR_TITLE}"
+          else
+            echo "❌ PR 제목 검증 실패"
+            echo "PR 제목: ${PR_TITLE}"
+            echo "검증 규칙: ^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+"
+          fi
 
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
   auto-fill-pr-body:
