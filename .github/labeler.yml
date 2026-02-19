@@ -1,25 +1,30 @@
 # 변경 파일 기반 라벨 자동 추가 규칙
 
 backend:
-  - src/main/java/**
-  - src/main/resources/**
-  - build.gradle
-  - Dockerfile
-  - compose.yaml
+  - changed-files:
+      - any-glob-to-any-file: 'src/main/java/**'
+      - any-glob-to-any-file: 'src/main/resources/**'
+      - any-glob-to-any-file: 'build.gradle'
+      - any-glob-to-any-file: 'Dockerfile'
+      - any-glob-to-any-file: 'compose.yaml'
 
 config:
-  - .github/**
-  - .coderabbit.yaml
-  - application*.yml
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+      - any-glob-to-any-file: '.coderabbit.yaml'
+      - any-glob-to-any-file: 'application*.yml'
 
 docs:
-  - README.md
-  - CHANGELOG.md
-  - docs/**
+  - changed-files:
+      - any-glob-to-any-file: 'README.md'
+      - any-glob-to-any-file: 'CHANGELOG.md'
+      - any-glob-to-any-file: 'docs/**'
 
 test:
-  - src/test/**
+  - changed-files:
+      - any-glob-to-any-file: 'src/test/**'
 
 dependencies:
-  - build.gradle
-  - package.json
+  - changed-files:
+      - any-glob-to-any-file: 'build.gradle'
+      - any-glob-to-any-file: 'package.json'
