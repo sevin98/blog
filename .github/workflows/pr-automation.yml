@@ -41,9 +41,10 @@ jobs:
             config
             ci
           requireScope: false
-          subjectPattern: ^.+$
+          requireSubject: false
+          subjectPattern: ^.*$
           subjectPatternError: |
-            PR 제목의 subject 부분은 필수입니다.
+            PR 제목의 subject 부분은 선택사항입니다.
           wip: true
         continue-on-error: true
 
@@ -107,7 +108,6 @@ jobs:
             - ✅ `refactor: 코드 구조 개선`
             - ✅ `feat(backend): 새로운 API 추가`
             - ❌ `code-rabbit config 추가` (타입 누락)
-            - ❌ `Code-rabbit config 추가` (타입 누락)
 
             ### 해결 방법
             PR 제목을 `<type>: <subject>` 형식으로 수정해주세요. 예: `feat: code-rabbit config 추가`
