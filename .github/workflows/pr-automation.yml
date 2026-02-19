@@ -1,0 +1,320 @@
+name: PR Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, edited, reopened]
+
+# 워크플로우 권한 설정 (PR 코멘트 작성 및 라벨 추가를 위해 필요)
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  checks: write
+
+jobs:
+  # PR 제목 규칙 검증 (Conventional Commits)
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check PR Title
+        id: validate
+        uses: deepakputhraya/action-pr-title@master
+        continue-on-error: true
+        with:
+          # Conventional Commits 형식: <type>: <subject>
+          # 허용 타입: feat, fix, refactor, perf, style, docs, chore, test
+          regex: '^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log Validation Result
+        id: log-result
+        if: always()
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          VALIDATION_RESULT="${{ steps.validate.outcome }}"
+          REGEX_PATTERN='^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+'
+          ALLOWED_TYPES='feat, fix, refactor, perf, style, docs, chore, test'
+          
+          # PR 제목에서 타입 추출 시도
+          if [[ "${PR_TITLE}" =~ ^([a-z]+)(\(.+\))?: ]]; then
+            EXTRACTED_TYPE="${BASH_REMATCH[1]}"
+            EXTRACTED_SCOPE="${BASH_REMATCH[2]}"
+            EXTRACTED_SUBJECT="${PR_TITLE#*: }"
+          else
+            EXTRACTED_TYPE="(추출 실패)"
+            EXTRACTED_SCOPE=""
+            EXTRACTED_SUBJECT="${PR_TITLE}"
+          fi
+          
+          # 실패 이유 분석
+          if [[ ! "${PR_TITLE}" =~ ^(feat|fix|refactor|perf|style|docs|chore|test) ]]; then
+            FAILURE_REASON="PR 제목이 허용된 타입(feat, fix, refactor, perf, style, docs, chore, test)으로 시작하지 않습니다."
+          elif [[ ! "${PR_TITLE}" =~ : ]]; then
+            FAILURE_REASON="PR 제목에 콜론(:)이 없습니다. 형식: <type>: <subject>"
+          elif [[ ! "${PR_TITLE}" =~ :\s.+ ]]; then
+            FAILURE_REASON="PR 제목의 subject 부분이 비어있거나 공백이 없습니다. 형식: <type>: <subject>"
+          else
+            FAILURE_REASON="PR 제목이 검증 규칙과 일치하지 않습니다."
+          fi
+          
+          echo "## 🔍 PR 제목 검증 결과" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR 제목**: \`${PR_TITLE}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$VALIDATION_RESULT" == "success" ]; then
+            echo "✅ **검증 결과**: PR 제목이 Conventional Commits 형식을 준수합니다." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**허용된 타입**: \`${ALLOWED_TYPES}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**검증 규칙**: \`${REGEX_PATTERN}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ PR 제목 검증 성공" >> $GITHUB_STEP_SUMMARY
+            
+            # 성공 메시지 저장 (PR 코멘트용)
+            echo "success_message=✅ PR 제목 검증 통과: \`${PR_TITLE}\`" >> $GITHUB_OUTPUT
+            
+            # 콘솔 출력
+            echo "✅ PR 제목 검증 성공"
+            echo "PR 제목: ${PR_TITLE}"
+            echo "허용된 타입: ${ALLOWED_TYPES}"
+          else
+            echo "❌ **검증 결과**: PR 제목이 검증 규칙과 일치하지 않습니다." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**검증 규칙**: \`${REGEX_PATTERN}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**허용된 타입**: \`${ALLOWED_TYPES}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 올바른 형식" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "<type>: <subject>" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 사용 가능한 타입" >> $GITHUB_STEP_SUMMARY
+            echo "- \`feat\`: 새로운 기능 추가" >> $GITHUB_STEP_SUMMARY
+            echo "- \`fix\`: 버그 수정" >> $GITHUB_STEP_SUMMARY
+            echo "- \`refactor\`: 코드 리팩토링" >> $GITHUB_STEP_SUMMARY
+            echo "- \`perf\`: 성능 개선" >> $GITHUB_STEP_SUMMARY
+            echo "- \`style\`: 코드 스타일 변경" >> $GITHUB_STEP_SUMMARY
+            echo "- \`docs\`: 문서 수정" >> $GITHUB_STEP_SUMMARY
+            echo "- \`chore\`: 기타 작업" >> $GITHUB_STEP_SUMMARY
+            echo "- \`test\`: 테스트 추가/수정" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 예시" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`feat: 새로운 기능 추가\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`fix: 버그 수정\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ✅ \`feat(backend): 백엔드 API 추가\`" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ \`새로운 기능 추가\` (타입 누락)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ PR 제목 검증 실패" >> $GITHUB_STEP_SUMMARY
+            
+            # 실패 메시지 저장 (PR 코멘트용)
+            {
+              echo 'failure_message<<EOF'
+              echo "## ❌ PR 제목 검증 실패"
+              echo ""
+              echo "### 현재 PR 제목"
+              echo "\`${PR_TITLE}\`"
+              echo ""
+              echo "### 검증 내용"
+              echo "- **검증 규칙**: \`${REGEX_PATTERN}\`"
+              echo "- **허용된 타입**: \`${ALLOWED_TYPES}\`"
+              echo ""
+              echo "### 제목에서 추출된 정보"
+              echo "- **타입**: \`${EXTRACTED_TYPE}\`"
+              if [ -n "${EXTRACTED_SCOPE}" ]; then
+                echo "- **Scope**: \`${EXTRACTED_SCOPE}\`"
+              fi
+              echo "- **Subject**: \`${EXTRACTED_SUBJECT}\`"
+              echo ""
+              echo "### 실패한 이유"
+              echo "${FAILURE_REASON}"
+              echo ""
+              echo "### 올바른 형식"
+              echo "\`\`\`"
+              echo "<type>: <subject>"
+              echo "\`\`\`"
+              echo ""
+              echo "### 예시"
+              echo "- ✅ \`feat: 새로운 기능 추가\`"
+              echo "- ✅ \`fix: 버그 수정\`"
+              echo "- ✅ \`feat(backend): 백엔드 API 추가\`"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+            
+            # 콘솔 출력
+            echo "❌ PR 제목 검증 실패"
+            echo "PR 제목: ${PR_TITLE}"
+            echo "추출된 타입: ${EXTRACTED_TYPE}"
+            echo "실패 이유: ${FAILURE_REASON}"
+            echo "허용된 타입: ${ALLOWED_TYPES}"
+            echo "검증 규칙: ${REGEX_PATTERN}"
+          fi
+
+      - name: Post Success Comment
+        if: steps.log-result.outputs.success_message != '' && steps.validate.outcome == 'success'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.log-result.outputs.success_message }}
+          edit-mode: replace
+
+      - name: Post Failure Comment
+        if: steps.log-result.outputs.failure_message != '' && steps.validate.outcome == 'failure'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.log-result.outputs.failure_message }}
+          edit-mode: replace
+
+  # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
+  auto-fill-pr-body:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: github.event.action == 'opened' && (github.event.pull_request.body == '' || contains(github.event.pull_request.body, '<!-- 커밋 로그가 자동으로 여기에 채워집니다 -->'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR Body from Commits
+        id: generate-body
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          # 커밋 로그 가져오기
+          COMMITS=$(git log --pretty=format:"- %s (%h)" ${BASE_SHA}..${HEAD_SHA} || echo "- 변경사항 없음")
+          
+          # PR 본문 생성
+          PR_BODY="## 📝 변경 사항
+          
+          $COMMITS
+          
+          ## 🔍 변경 이유
+          
+          <!-- 이 PR을 만든 이유를 설명해주세요 -->
+          
+          ## ✅ 체크리스트
+          
+          - [ ] 코드가 정상적으로 빌드됩니다
+          - [ ] 테스트가 통과합니다 (해당되는 경우)
+          - [ ] 문서가 업데이트되었습니다 (해당되는 경우)
+          - [ ] CodeRabbit 리뷰를 확인했습니다
+          
+          ## 🔗 관련 이슈
+          
+          <!-- 관련 이슈가 있다면 링크해주세요 -->
+          Closes #"
+          
+          # 멀티라인 출력
+          {
+            echo 'body<<EOF'
+            echo "$PR_BODY"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
+      - name: Update PR Body
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.generate-body.outputs.body }}
+          edit-mode: replace
+
+  # 변경 파일 기반 라벨 자동 추가
+  auto-label:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add Labels Based on Changes
+        uses: actions/labeler@v6
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+          sync-labels: true
+
+  # 자동 체크 코멘트 (테스트 누락 제안 - 필수는 아님)
+  auto-check-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            src/main/java/**
+            src/test/java/**
+
+      - name: Check for Missing Tests
+        id: check-tests
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          
+          # 변경된 Java 파일 목록 가져오기
+          CHANGED_JAVA=$(git diff --name-only --diff-filter=ACMR ${BASE_SHA}..${HEAD_SHA} | grep 'src/main/java.*\.java$' || true)
+          MISSING_TESTS=""
+          
+          if [ -n "$CHANGED_JAVA" ]; then
+            for file in $CHANGED_JAVA; do
+              # 파일이 실제로 존재하는지 확인
+              if [ -f "$file" ]; then
+                # 테스트 파일 경로 생성
+                test_file=$(echo "$file" | sed 's|src/main/java|src/test/java|' | sed 's|\.java|Test.java|')
+                if [ ! -f "$test_file" ]; then
+                  # 클래스명만 추출 (패키지 경로 제거)
+                  class_name=$(basename "$file" .java)
+                  MISSING_TESTS="${MISSING_TESTS}- \`${class_name}\` 클래스\n"
+                fi
+              fi
+            done
+          fi
+          
+          if [ -n "$MISSING_TESTS" ]; then
+            echo "has_missing_tests=true" >> $GITHUB_OUTPUT
+            echo "missing_tests<<EOF" >> $GITHUB_OUTPUT
+            echo -e "$MISSING_TESTS" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has_missing_tests=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post Check Comment
+        if: steps.check-tests.outputs.has_missing_tests == 'true'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## 💡 테스트 제안
+            
+            다음 클래스에 대한 테스트 코드를 추가하는 것을 고려해주세요 (선택사항):
+            
+            ${{ steps.check-tests.outputs.missing_tests }}
+            
+            > 참고: 이는 필수 사항이 아니며, 코드 품질 향상을 위한 제안입니다.
