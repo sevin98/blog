@@ -34,6 +34,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log Validation Result
+        id: log-result
         if: always()
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
@@ -45,15 +46,27 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "$VALIDATION_RESULT" == "success" ]; then
-            echo "✅ **검증 결과**: 추출된 PR 제목이 검증 필터와 일치합니다. 문제없습니다." >> $GITHUB_STEP_SUMMARY
+            echo "✅ **검증 결과**: PR 제목이 Conventional Commits 형식을 준수합니다." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**허용된 타입**: \`feat\`, \`fix\`, \`refactor\`, \`perf\`, \`style\`, \`docs\`, \`chore\`, \`test\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**검증 규칙**: \`^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "✅ PR 제목 검증 성공" >> $GITHUB_STEP_SUMMARY
+            
+            # 성공 메시지 저장 (PR 코멘트용)
+            echo "success_message=✅ PR 제목 검증 통과: \`${PR_TITLE}\`" >> $GITHUB_OUTPUT
+            
+            # 콘솔 출력
+            echo "✅ PR 제목 검증 성공"
+            echo "PR 제목: ${PR_TITLE}"
+            echo "허용된 타입: feat, fix, refactor, perf, style, docs, chore, test"
           else
-            echo "❌ **검증 결과**: PR 제목이 검증 필터와 일치하지 않습니다." >> $GITHUB_STEP_SUMMARY
+            echo "❌ **검증 결과**: PR 제목이 검증 규칙과 일치하지 않습니다." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "**검증 규칙**: \`^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**허용된 타입**: \`feat\`, \`fix\`, \`refactor\`, \`perf\`, \`style\`, \`docs\`, \`chore\`, \`test\`" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### 올바른 형식" >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
@@ -77,17 +90,21 @@ jobs:
             echo "- ❌ \`새로운 기능 추가\` (타입 누락)" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "❌ PR 제목 검증 실패" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          # 콘솔에도 출력
-          if [ "$VALIDATION_RESULT" == "success" ]; then
-            echo "✅ 추출된 PR 제목이 검증 필터와 일치합니다. 문제없습니다."
-            echo "PR 제목: ${PR_TITLE}"
-          else
+            
+            # 콘솔 출력
             echo "❌ PR 제목 검증 실패"
             echo "PR 제목: ${PR_TITLE}"
+            echo "허용된 타입: feat, fix, refactor, perf, style, docs, chore, test"
             echo "검증 규칙: ^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+"
           fi
+
+      - name: Post Success Comment
+        if: steps.log-result.outputs.success_message != '' && steps.validate.outcome == 'success'
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: ${{ steps.log-result.outputs.success_message }}
+          edit-mode: replace
 
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
   auto-fill-pr-body:
