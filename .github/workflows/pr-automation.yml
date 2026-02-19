@@ -44,6 +44,26 @@ jobs:
           wip: true
         continue-on-error: true
 
+      - name: Debug semantic PR outputs
+        if: always()
+        run: |
+          echo "## 🔍 PR 제목 검증 디버그 정보" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR 제목**: \`${{ github.event.pull_request.title }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**검증 결과**: ${{ steps.validate.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**추출된 정보**:">> $GITHUB_STEP_SUMMARY
+          echo "- Type: \`${{ steps.validate.outputs.type }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Scope: \`${{ steps.validate.outputs.scope }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Subject: \`${{ steps.validate.outputs.subject }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.validate.outcome }}" == "failure" ]; then
+            echo "**에러 메시지**: ${{ steps.validate.outputs.error_message }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**허용된 타입**: feat, fix, refactor, perf, style, docs, chore, test" >> $GITHUB_STEP_SUMMARY
+
       - name: Post Validation Error Comment
         if: steps.validate.outcome == 'failure'
         uses: peter-evans/create-or-update-comment@v5
