@@ -56,4 +56,4 @@ jobs:
           path: |
             build/libs/*.jar
             build/libs/*.war
-          retention-days: 7
+          retention-days: 1
