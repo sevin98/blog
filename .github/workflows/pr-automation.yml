@@ -41,9 +41,9 @@ jobs:
             config
             ci
           requireScope: false
-          subjectPattern: ^(?![A-Z]).+$
+          subjectPattern: ^[a-z].+$
           subjectPatternError: |
-            PR 제목은 소문자로 시작해야 합니다.
+            PR 제목의 subject 부분은 소문자로 시작해야 합니다.
           wip: true
         continue-on-error: true
 
