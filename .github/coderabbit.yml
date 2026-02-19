@@ -13,5 +13,6 @@ reviews:
     - "**/*.spec.ts"
     - "**/*.test.ts"
 comments:
+  language: "ko"
   max_comments: 20       # PR당 최대 코멘트 수 제한
   auto_approve: false    # 자동 승인 여부
