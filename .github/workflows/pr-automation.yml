@@ -41,6 +41,9 @@ jobs:
             config
             ci
           requireScope: false
+          subjectPattern: ^.+$
+          subjectPatternError: |
+            PR 제목의 subject 부분은 필수입니다.
           wip: true
         continue-on-error: true
 
