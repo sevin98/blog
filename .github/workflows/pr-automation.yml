@@ -12,6 +12,22 @@ permissions:
   checks: write
 
 jobs:
+  # PR 제목 규칙 검증 (Conventional Commits)
+  validate-pr-title:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    steps:
+      - name: Check PR Title
+        uses: deepakputhraya/action-pr-title@master
+        with:
+          # Conventional Commits 형식: <type>: <subject>
+          # 허용 타입: feat, fix, refactor, perf, style, docs, chore, test
+          regex: '^(feat|fix|refactor|perf|style|docs|chore|test)(\(.+\))?:\s.+'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
   auto-fill-pr-body:
     runs-on: ubuntu-latest
