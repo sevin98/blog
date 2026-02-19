@@ -74,6 +74,12 @@ jobs:
 
             현재 PR 제목: **`${{ github.event.pull_request.title }}`**
 
+            ### 🔍 디버그 정보
+            - **추출된 Type**: `${{ steps.validate.outputs.type || '(없음)' }}`
+            - **추출된 Scope**: `${{ steps.validate.outputs.scope || '(없음)' }}`
+            - **추출된 Subject**: `${{ steps.validate.outputs.subject || '(없음)' }}`
+            - **에러 메시지**: `${{ steps.validate.outputs.error_message || '알 수 없음' }}`
+
             ### 문제점
             PR 제목이 [Conventional Commits](https://www.conventionalcommits.org/) 형식을 따르지 않습니다.
 
@@ -102,6 +108,8 @@ jobs:
 
             ### 해결 방법
             PR 제목을 `<type>: <subject>` 형식으로 수정해주세요. 예: `feat: code-rabbit config 추가`
+
+            > 💡 더 자세한 디버그 정보는 [워크플로우 실행 로그](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})의 "Debug semantic PR outputs" 스텝에서 확인할 수 있습니다.
           edit-mode: replace
 
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
