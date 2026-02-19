@@ -1,3 +1,8 @@
-/gradlew text eol=lf
-*.bat text eol=crlf
-*.jar binary
+# GitHub Actions 워크플로우 파일은 항상 LF 사용 (CRLF 문제 방지)
+.github/workflows/*.yml text eol=lf
+.github/workflows/*.yaml text eol=lf
+
+# 기타 설정
+*.gradle text eol=lf
+*.properties text eol=lf
+*.sh text eol=lf
