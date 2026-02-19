@@ -41,7 +41,6 @@ jobs:
             config
             ci
           requireScope: false
-          requireSubject: false
           subjectPattern: ^.*$
           subjectPatternError: |
             PR 제목의 subject 부분은 선택사항입니다.
