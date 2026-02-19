@@ -1,6 +1,6 @@
 # 변경 파일 기반 라벨 자동 추가 규칙
 
-backend:
+'backend':
   - changed-files:
       - any-glob-to-any-file: 'src/main/java/**'
       - any-glob-to-any-file: 'src/main/resources/**'
@@ -8,23 +8,23 @@ backend:
       - any-glob-to-any-file: 'Dockerfile'
       - any-glob-to-any-file: 'compose.yaml'
 
-config:
+'config':
   - changed-files:
       - any-glob-to-any-file: '.github/**'
       - any-glob-to-any-file: '.coderabbit.yaml'
       - any-glob-to-any-file: 'application*.yml'
 
-docs:
+'docs':
   - changed-files:
       - any-glob-to-any-file: 'README.md'
       - any-glob-to-any-file: 'CHANGELOG.md'
       - any-glob-to-any-file: 'docs/**'
 
-test:
+'test':
   - changed-files:
       - any-glob-to-any-file: 'src/test/**'
 
-dependencies:
+'dependencies':
   - changed-files:
       - any-glob-to-any-file: 'build.gradle'
       - any-glob-to-any-file: 'package.json'
