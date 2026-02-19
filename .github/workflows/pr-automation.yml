@@ -41,9 +41,6 @@ jobs:
             config
             ci
           requireScope: false
-          subjectPattern: ^[a-z].+$
-          subjectPatternError: |
-            PR 제목의 subject 부분은 소문자로 시작해야 합니다.
           wip: true
         continue-on-error: true
 
@@ -65,7 +62,7 @@ jobs:
             <type>: <subject>
             ```
 
-            ### 사용 가능한 타입
+            ### 사용 가능한 타입 (제목이 다음 중 하나로 시작해야 함)
             - `feat`: 새로운 기능 추가
             - `fix`: 버그 수정
             - `refactor`: 코드 리팩토링
@@ -79,11 +76,12 @@ jobs:
             - ✅ `feat: code-rabbit config 추가`
             - ✅ `fix: PR 자동화 워크플로우 권한 수정`
             - ✅ `refactor: 코드 구조 개선`
-            - ❌ `code-rabitt config 추가#3` (타입 누락)
-            - ❌ `Code-rabbit config 추가` (대문자 시작)
+            - ✅ `feat(backend): 새로운 API 추가`
+            - ❌ `code-rabbit config 추가` (타입 누락)
+            - ❌ `Code-rabbit config 추가` (타입 누락)
 
             ### 해결 방법
-            PR 제목을 수정해주세요. 예: `feat: code-rabbit config 추가`
+            PR 제목을 `<type>: <subject>` 형식으로 수정해주세요. 예: `feat: code-rabbit config 추가`
           edit-mode: replace
 
   # PR 본문을 커밋 로그로 자동 생성 (PR 생성 시에만)
