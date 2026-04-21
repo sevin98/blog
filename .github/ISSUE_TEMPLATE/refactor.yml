@@ -1,0 +1,19 @@
+name: "♻️ Refactor"
+description: "리팩토링"
+labels: ["refactor"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: 현재 구조의 어떤 문제가 있는가
+    validations:
+      required: true
+
+  - type: textarea
+    id: how
+    attributes:
+      label: How
+      description: 어떻게 개선할 것인가
+    validations:
+      required: true

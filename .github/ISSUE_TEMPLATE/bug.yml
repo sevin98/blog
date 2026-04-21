@@ -1,0 +1,19 @@
+name: "🐞 Bug"
+description: "버그 제보"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: 어떤 증상인가, 재현 절차
+    validations:
+      required: true
+
+  - type: textarea
+    id: how
+    attributes:
+      label: How
+      description: 어떻게 수정할 것인가
+    validations:
+      required: true

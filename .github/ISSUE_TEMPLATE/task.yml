@@ -1,0 +1,19 @@
+name: "📌 Task"
+description: "일반 작업"
+labels: ["task"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: 왜 이 작업이 필요한가
+    validations:
+      required: true
+
+  - type: textarea
+    id: how
+    attributes:
+      label: How
+      description: 어떻게 진행할 것인가
+    validations:
+      required: true
