@@ -16,7 +16,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: blog_test
+          POSTGRES_DB: blog_local
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -47,9 +47,6 @@ jobs:
 
       - name: Build with Gradle
         env:
-          DB_URL: jdbc:postgresql://localhost:5432/blog_test
-          DB_USERNAME: postgres
-          DB_PASSWORD: postgres
           SPRING_PROFILES_ACTIVE: local
         run: ./gradlew clean build --no-daemon
 
