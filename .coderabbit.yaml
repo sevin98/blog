@@ -19,19 +19,19 @@ reviews:
   # PR의 전체적인 변경 사항에 대한 고수준의 요약(summary)을 생성할지 여부입니다.
   high_level_summary: true
   # 변경된 각 파일에 대한 요약을 생성할지 여부입니다. 
-  changed_files_summary: false
+  changed_files_summary: true
   # 코드의 실행 흐름을 보여주는 시퀀스 다이어그램을 생성할지 여부입니다.
-  sequence_diagrams: false
+  sequence_diagrams: true
   # PR에 연결된 이슈(Issue)를 분석하여 리뷰 컨텍스트에 활용할지 여부입니다.
   assess_linked_issues: true
   # 연관된 다른 이슈를 찾아서 링크할지 여부입니다.
-  related_issues: false
+  related_issues: true
   # 연관된 다른 PR을 찾아서 링크할지 여부입니다.
   related_prs: false
   # PR에 적절한 레이블(e.g., 'bug', 'enhancement')을 제안할지 여부입니다.
-  suggested_labels: false
+  suggested_labels: true
   # 제안된 레이블을 자동으로 PR에 적용할지 여부입니다.
-  auto_apply_labels: false
+  auto_apply_labels: true
   # 이 PR을 리뷰할 만한 적절한 동료 리뷰어를 추천할지 여부입니다.
   suggested_reviewers: false
   # 추천된 리뷰어를 자동으로 할당할지 여부입니다.

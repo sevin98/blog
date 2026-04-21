@@ -28,10 +28,6 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/blog_local
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
-      NOTION_API_TOKEN: ${NOTION_API_TOKEN:-}
-      NOTION_DATABASE_ID: ${NOTION_DATABASE_ID:-}
-      NOTION_DEV_NOTE_ENABLED: ${NOTION_DEV_NOTE_ENABLED:-true}
-      NOTION_DEV_NOTE_SCHEDULE: ${NOTION_DEV_NOTE_SCHEDULE:-0 0 23 * * *}
     depends_on:
       postgres:
         condition: service_healthy

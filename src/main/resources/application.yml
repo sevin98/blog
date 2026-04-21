@@ -7,12 +7,3 @@ spring:
 server:
   servlet:
     context-path: /blog
-
-notion:
-  api:
-    base-url: https://api.notion.com/v1
-    token: ${NOTION_API_TOKEN:}
-    database-id: ${NOTION_DATABASE_ID:}
-  dev-note:
-    enabled: ${NOTION_DEV_NOTE_ENABLED:true}
-    schedule: ${NOTION_DEV_NOTE_SCHEDULE:0 0 23 * * *} # 매일 23시 (cron 표현식)
