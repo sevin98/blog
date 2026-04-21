@@ -33,10 +33,18 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String githubUsername = oAuth2User.getAttribute(AuthConstants.GITHUB_USERNAME_ATTR);
 
+        if (githubUsername == null) {
+            log.error("GitHub username attribute missing from OAuth2 principal");
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
         String token = jwtProvider.generate(githubUsername);
         log.info("JWT issued for admin: {}", githubUsername);
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieProvider.createTokenCookie(token).toString());
-        getRedirectStrategy().sendRedirect(request, response, frontendUrl + AuthConstants.ADMIN_REDIRECT_PATH);
+        // JWT는 httpOnly 쿠키에 설정 완료 → 프론트엔드 대시보드로 리다이렉트
+        // 프론트엔드에서 /admin/auth/me 호출로 사용자 정보 조회
+        getRedirectStrategy().sendRedirect(request, response, frontendUrl + AuthConstants.ADMIN_LOGIN_REDIRECT);
     }
 }
