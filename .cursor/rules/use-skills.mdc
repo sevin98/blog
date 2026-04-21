@@ -7,33 +7,35 @@ alwaysApply: true
 
 어떤 작업을 시작하기 전에, 아래 skill 목록과 트리거 조건을 확인하고 **가장 관련성 높은 skill의 SKILL.md를 Read 툴로 읽어서 그 지침을 따른다**.
 
+> skill 경로는 에이전트 런타임의 `<available_skills>` 목록에서 자동으로 해석된다. 아래 표에서 경로는 생략하고 이름·트리거만 관리한다.
+
 ## 사용 가능한 Skills
 
-| Skill | 경로 | 트리거 조건 |
-|---|---|---|
-| spring-api-builder | `C:\Users\theo.s.park\.claude\skills\spring-api-builder\SKILL.md` | REST API 엔드포인트 추가/수정, controller/service 작성, CRUD |
-| start-feature | `C:\Users\theo.s.park\.claude\skills\start-feature\SKILL.md` | 새 기능 시작, 이슈 생성, 브랜치 생성 |
-| frontend-design | `C:\Users\theo.s.park\.claude\skills\frontend-design\SKILL.md` | 웹 UI 컴포넌트, 페이지, 프론트엔드 작업 |
-| create-rule | `C:\Users\theo.s.park\.cursor\skills-cursor\create-rule\SKILL.md` | Cursor 룰 생성, `.cursor/rules/` 설정 |
-| create-skill | `C:\Users\theo.s.park\.cursor\skills-cursor\create-skill\SKILL.md` | 새 Skill 작성/편집 |
-| create-hook | `C:\Users\theo.s.park\.cursor\skills-cursor\create-hook\SKILL.md` | Cursor hook 생성, hooks.json 작성 |
-| update-cursor-settings | `C:\Users\theo.s.park\.cursor\skills-cursor\update-cursor-settings\SKILL.md` | 에디터 설정 변경, settings.json 수정 |
-| update-cli-config | `C:\Users\theo.s.park\.cursor\skills-cursor\update-cli-config\SKILL.md` | Cursor CLI 설정 변경 |
-| statusline | `C:\Users\theo.s.park\.cursor\skills-cursor\statusline\SKILL.md` | CLI 상태바/statusline 설정 |
-| babysit | `C:\Users\theo.s.park\.cursor\skills-cursor\babysit\SKILL.md` | PR 코멘트 처리, CI 수정, merge-ready 유지 |
-| brainstorming | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\brainstorming\SKILL.md` | 기능 설계, 창의적 작업 시작 전 |
-| writing-plans | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\writing-plans\SKILL.md` | 다단계 구현 계획 수립 |
-| executing-plans | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\executing-plans\SKILL.md` | 작성된 계획 실행 |
-| test-driven-development | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\test-driven-development\SKILL.md` | 기능 구현/버그수정 전 테스트 작성 |
-| systematic-debugging | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\systematic-debugging\SKILL.md` | 버그, 테스트 실패, 예상치 못한 동작 발생 시 |
-| requesting-code-review | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\requesting-code-review\SKILL.md` | 작업 완료 후, 머지 전 검증 |
-| receiving-code-review | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\receiving-code-review\SKILL.md` | 코드 리뷰 피드백 수신 시 |
-| verification-before-completion | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\verification-before-completion\SKILL.md` | 작업 완료 선언, 커밋/PR 생성 직전 |
-| finishing-a-development-branch | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\finishing-a-development-branch\SKILL.md` | 구현 완료 후 브랜치 통합 결정 |
-| dispatching-parallel-agents | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\dispatching-parallel-agents\SKILL.md` | 독립적인 작업 2개 이상 병렬 처리 |
-| subagent-driven-development | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\subagent-driven-development\SKILL.md` | 현재 세션에서 독립 태스크 병렬 실행 |
-| using-git-worktrees | `C:\Users\theo.s.park\.claude\plugins\cache\claude-plugins-official\superpowers\5.0.7\skills\using-git-worktrees\SKILL.md` | 격리된 기능 작업, 워크트리 생성 |
-| excalidraw | `C:\Users\theo.s.park\.claude\skills\excalidraw\SKILL.md` | 다이어그램 생성/수정, 아키텍처 그리기, .excalidraw 파일 작업 |
+| Skill | 트리거 조건 |
+|---|---|
+| `spring-api-builder` | REST API 엔드포인트 추가/수정, controller/service 작성, CRUD |
+| `start-feature` | 새 기능 시작, 이슈 생성, 브랜치 생성 |
+| `frontend-design` | 웹 UI 컴포넌트, 페이지, 프론트엔드 작업 |
+| `create-rule` | Cursor 룰 생성, `.cursor/rules/` 설정 |
+| `create-skill` | 새 Skill 작성/편집 |
+| `create-hook` | Cursor hook 생성, hooks.json 작성 |
+| `update-cursor-settings` | 에디터 설정 변경, settings.json 수정 |
+| `update-cli-config` | Cursor CLI 설정 변경 |
+| `statusline` | CLI 상태바/statusline 설정 |
+| `babysit` | PR 코멘트 처리, CI 수정, merge-ready 유지 |
+| `brainstorming` | 기능 설계, 창의적 작업 시작 전 |
+| `writing-plans` | 다단계 구현 계획 수립 |
+| `executing-plans` | 작성된 계획 실행 |
+| `test-driven-development` | 기능 구현/버그수정 전 테스트 작성 |
+| `systematic-debugging` | 버그, 테스트 실패, 예상치 못한 동작 발생 시 |
+| `requesting-code-review` | 작업 완료 후, 머지 전 검증 |
+| `receiving-code-review` | 코드 리뷰 피드백 수신 시 |
+| `verification-before-completion` | 작업 완료 선언, 커밋/PR 생성 직전 |
+| `finishing-a-development-branch` | 구현 완료 후 브랜치 통합 결정 |
+| `dispatching-parallel-agents` | 독립적인 작업 2개 이상 병렬 처리 |
+| `subagent-driven-development` | 현재 세션에서 독립 태스크 병렬 실행 |
+| `using-git-worktrees` | 격리된 기능 작업, 워크트리 생성 |
+| `excalidraw` | 다이어그램 생성/수정, 아키텍처 그리기, .excalidraw 파일 작업 |
 
 ## 적용 규칙
 

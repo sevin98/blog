@@ -11,23 +11,24 @@ PR 올리기 전에 변경된 비즈니스 로직 / API에 대한 테스트 코�
 
 ### 2단계: 변경 파일 분석
 
-아래 명령으로 변경 내역을 파악한다:
+아래 명령으로 변경 내역을 파악한다 (기준 브랜치: `$ARGUMENTS` 가 있으면 그 값, 없으면 `develop`):
 
 ```
-git diff main...HEAD --name-only
-git diff main...HEAD
+BASE=${ARGUMENTS:-develop}
+git diff $BASE...HEAD --name-only
+git diff $BASE...HEAD
 ```
 
 **테스트 작성 대상 파일 판단 기준:**
 
 | 대상 O | 대상 X |
 |--------|--------|
-| `**/controller/**/*.kt` | `**/repository/**/*.kt` (interface만, 메서드 바디 없음) |
-| `**/controller/dto/**/*.kt` (validation 있는 경우) | `**/service/dto/**/*.kt` |
-| `**/service/**/*.kt` | `**/config/**/*.kt` |
-| `**/domain/**/*.kt` (entity, VO) | `**/*Application.kt` |
-| `**/repository/**/*.kt` (구현체, 메서드 바디 있음) | `**/test/**/*.kt` (테스트 파일 자체) |
-| | `.github/**`, `*.md`, `*.yml`, `build.gradle.kts` |
+| `**/controller/**/*.java` | `**/repository/**/*.java` (interface만, 메서드 바디 없음) |
+| `**/controller/dto/**/*.java` (validation 있는 경우) | `**/dto/**/*.java` (단순 record/DTO) |
+| `**/service/**/*.java` | `**/config/**/*.java` |
+| `**/domain/**/*.java` (entity, VO, 비즈니스 로직 있는 경우) | `**/*Application.java` |
+| `**/repository/**/*.java` (구현체, 메서드 바디 있음) | `**/test/**/*.java` (테스트 파일 자체) |
+| | `.github/**`, `*.md`, `*.yml`, `build.gradle` |
 
 파일명뿐 아니라 diff 내용을 확인한다. repository 파일은 실제 구현 로직(메서드 바디)이 있을 때만 대상에 포함한다.
 
@@ -38,9 +39,9 @@ git diff main...HEAD
 각 대상 파일에 대해 테스트를 작성한다.
 
 - **기존 테스트 파일이 있으면** 보완한다
-- **없으면** 신규 생성한다 (`src/test/kotlin/...` 경로에 동일한 패키지 구조로)
-- **테스트 스타일**: JUnit5 + kotlin-test (`@Test`, `assertEquals`, `assertFailsWith` 등)
-- **Spring 어노테이션**: 레이어에 맞게 사용 (`@WebMvcTest`, `@ExtendWith(MockitoExtension::class)` 등)
+- **없으면** 신규 생성한다 (`src/test/java/...` 경로에 동일한 패키지 구조로)
+- **테스트 스타일**: JUnit5 + AssertJ (`@Test`, `assertThat`, `assertThatThrownBy` 등) + Mockito
+- **Spring 어노테이션**: 레이어에 맞게 사용 (`@WebMvcTest`, `@ExtendWith(MockitoExtension.class)`, `@MockitoBean` 등)
 - 도메인 이름은 diff에서 동적으로 추출한다 (하드코딩 없음)
 
 ### 4단계: 테스트 실행
