@@ -7,10 +7,10 @@
 - 커밋되지 않은 변경사항이 있으면 중단하고 사용자에게 알린다
 
 ### 2. 테스트 코드 자동 생성 및 실행
-- `git diff origin/main...HEAD --name-only --diff-filter=ACM`으로 변경된 `src/main/kotlin` 하위 `.kt` 파일 목록 추출
+- `git diff origin/main...HEAD --name-only --diff-filter=ACM`으로 변경된 `src/main/java` 하위 `.java` 파일 목록 추출
 - 변경된 파일이 없으면 테스트 단계 건너뜀
-- 각 파일에 대해 `src/test/kotlin` 하위 대응 경로에 JUnit5 + MockK 기반 테스트 코드 작성
-  - 파일명은 원본 파일명 + `Test.kt`
+- 각 파일에 대해 `src/test/java` 하위 대응 경로에 JUnit5 + Mockito 기반 테스트 코드 작성
+  - 파일명은 원본 파일명 + `Test.java`
   - 패키지 경로는 원본과 동일하게 유지
 - `./gradlew test` 실행
 - 테스트 성공/실패 여부와 무관하게 생성한 테스트 파일 전체 삭제 (`if: always()` 와 동일한 개념)

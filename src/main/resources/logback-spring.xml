@@ -33,7 +33,7 @@
         <logger name="sevin.dev.blog" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
         <logger name="org.hibernate.SQL" level="DEBUG"/>
-        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+        <logger name="org.hibernate.orm.jdbc.bind" level="TRACE"/>
     </springProfile>
 
     <springProfile name="production">

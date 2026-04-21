@@ -4,7 +4,12 @@
       "Bash(gh api *)",
       "Bash(xargs ls *)",
       "Bash(./gradlew build *)",
-      "Bash(gh pr create --title 'chore: 초기 환경 설정 및 프로젝트 기반 구성' --base main --body ' *)"
+      "Bash(./gradlew test *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git push -u origin *)",
+      "Bash(gh pr create --title * --base main --body *)"
     ]
   }
 }
