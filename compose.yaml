@@ -6,9 +6,11 @@ services:
       POSTGRES_DB: blog_local
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      # [로컬 전용] 비밀번호 없이 접속 허용 - 공유/운영 환경에서는 절대 사용 금지
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      # 로컬 개발 전용 포트 노출 - 운영 환경에서는 제거 또는 127.0.0.1로 바인딩
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

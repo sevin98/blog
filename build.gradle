@@ -52,10 +52,13 @@ tasks.named('test') {
 	systemProperty 'spring.profiles.active', System.getenv('SPRING_PROFILES_ACTIVE') ?: 'local'
 }
 
-// WAR 파일 생성 설정
+// plain war 비활성화 - bootWar(실행 가능한 WAR)만 사용
 war {
-	enabled = true
-	archiveClassifier = '' // 기본 WAR 파일 (plain war가 아닌 executable war)
+	enabled = false
+}
+
+bootWar {
+	archiveFileName = 'app.war'
 }
 
 bootRun {
