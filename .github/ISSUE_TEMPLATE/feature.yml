@@ -1,0 +1,19 @@
+name: "✨ Feature"
+description: "새로운 기능 추가"
+labels: ["feature"]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: 왜 이 기능이 필요한가
+    validations:
+      required: true
+
+  - type: textarea
+    id: how
+    attributes:
+      label: How
+      description: 어떻게 구현할 것인가
+    validations:
+      required: true

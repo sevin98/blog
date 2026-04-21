@@ -4,20 +4,35 @@ spring:
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
-  
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID:local-client-id}
+            client-secret: ${GITHUB_CLIENT_SECRET:local-client-secret}
+            scope: read:user
+            redirect-uri: ${APP_BASE_URL:http://localhost:8080/blog}/login/oauth2/code/github
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-jwt-secret-key-must-be-at-least-64-characters-long-for-hmac}
+    expiration-days: 7
+  admin:
+    github-username: ${ADMIN_GITHUB_USERNAME:sevin98}
+  frontend-url: ${FRONTEND_URL:http://localhost:8080/blog}
+  cookie:
+    secure: false
+    same-site: Lax
 
 logging:
-  level:
-    root: INFO
-    sevin.dev.blog: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  config: classpath:logback-spring.xml
