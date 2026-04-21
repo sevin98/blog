@@ -1,0 +1,181 @@
+---
+description: 이 프로젝트의 Java 코딩 컨벤션 (Builder, Setter 금지, record DTO, ENUM 우선)
+globs: **/*.java
+alwaysApply: false
+---
+
+# Java 코딩 컨벤션
+
+## DTO — record 클래스 (필수)
+
+모든 Request/Response DTO는 Java record로 작성한다. 일반 class, Lombok @Data 금지.
+
+```java
+// ✅ GOOD
+public record CreatePostRequest(
+    @NotBlank String title,
+    @NotBlank String slug,
+    String excerpt
+) {}
+
+public record PostResponse(Long id, String title, String slug, PostStatus status) {}
+
+// ❌ BAD — class DTO
+@Data
+public class CreatePostRequest {
+    private String title;
+}
+```
+
+## ENUM 우선 원칙
+
+상태, 타입, 고정 목록은 반드시 ENUM으로 정의한다. 문자열/숫자 하드코딩 금지.
+
+```java
+// ✅ GOOD
+public enum PostStatus { DRAFT, PUBLISHED, PRIVATE, SCHEDULED, DELETED }
+public enum ReactionEmoji { THUMBS_UP, HEART, FIRE, THINKING }
+public enum AnalyticsEventType { PAGE_VIEW, POST_VIEW, SEARCH }
+public enum CommentStatus { ACTIVE, DELETED }
+
+// ❌ BAD
+if (status.equals("PUBLISHED")) { ... }
+if (emoji.equals("👍")) { ... }
+```
+
+ENUM에는 `@Getter @RequiredArgsConstructor`로 메타데이터를 함께 보관한다.
+
+```java
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다."),
+    POST_NOT_FOUND(HttpStatus.NOT_FOUND, "POST_NOT_FOUND", "게시글을 찾을 수 없습니다.");
+
+    private final HttpStatus httpStatus;
+    private final String code;
+    private final String message;
+}
+```
+
+## Builder 패턴 (필수)
+
+엔티티 생성은 `@Builder` + 정적 팩토리 `of()`. Setter로 필드를 채우는 방식 금지.
+
+```java
+// ✅ GOOD
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
+public class Post {
+    private String title;
+    private PostStatus status;
+
+    public static Post create(String title) {
+        return Post.builder()
+                .title(title)
+                .status(PostStatus.DRAFT)
+                .build();
+    }
+}
+
+// ❌ BAD
+Post post = new Post();
+post.setTitle("제목");
+post.setStatus("DRAFT");
+```
+
+## Setter 금지
+
+- `@Setter`, `@Data` 사용 금지
+- 상태 변경은 의미 있는 도메인 메서드로 표현
+
+```java
+// ✅ GOOD
+public void publish() {
+    this.status = PostStatus.PUBLISHED;
+    this.publishedAt = LocalDateTime.now();
+}
+
+// ❌ BAD
+public void setStatus(PostStatus status) { ... }
+```
+
+## 엔티티 @Builder 세트
+
+JPA 엔티티에 `@Builder` 사용 시 아래 세 어노테이션을 항상 함께 쓴다.
+
+```java
+@NoArgsConstructor(access = AccessLevel.PROTECTED)  // JPA 필수
+@AllArgsConstructor(access = AccessLevel.PRIVATE)   // @Builder 필수
+@Builder
+```
+
+## 접근 제한자 원칙 (캡슐화)
+
+- 필드는 항상 `private` — 외부 접근은 메서드로만
+- 클래스 내부 구현 메서드는 `private`
+- 패키지 내부에서만 쓰이면 package-private (default)
+- 상속 목적의 메서드만 `protected`
+- `public`은 API 계약이 명확한 경우에만
+
+```java
+// ✅ GOOD
+public class Post {
+    private final String title;          // 필드 private
+    private PostStatus status;
+
+    public void publish() {              // 외부 계약 public
+        validatePublishable();           // 내부 검증 private
+        this.status = PostStatus.PUBLISHED;
+    }
+
+    private void validatePublishable() {
+        if (this.status == PostStatus.DELETED) {
+            throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+    }
+}
+```
+
+## 책임 분리 원칙
+
+하나의 클래스는 하나의 책임만. 반복되거나 공유되는 로직은 별도 클래스로 추출.
+
+```
+// ✅ 예시: 쿠키 생성 책임 → CookieProvider
+// ✅ 예시: JWT 관련 책임 → JwtProvider
+// ✅ 예시: OAuth2 사용자 검증 → CustomOAuth2UserService
+// ❌ Controller에서 쿠키 직접 생성 + 비즈니스 로직 같이 처리
+```
+
+같은 로직이 2곳 이상 반복되면 즉시 추출한다.
+
+## 상수 관리
+
+- 도메인 관련 고정 문자열/숫자 → 해당 도메인 `Constants` 클래스 또는 ENUM
+- 외부 연동 키 이름 → `Constants` 클래스 (ex: `AuthConstants.COOKIE_NAME`)
+- 매직 넘버 금지 — 의미 있는 상수명 사용
+
+```java
+// ❌ BAD
+if (emoji.equals("👍")) { ... }
+cookie.maxAge(604800)
+
+// ✅ GOOD
+if (emoji == ReactionEmoji.THUMBS_UP) { ... }
+cookie.maxAge(Duration.ofDays(AuthConstants.TOKEN_EXPIRY_DAYS))
+```
+
+## Lombok 허용/금지
+
+| 허용 | 금지 |
+|---|---|
+| `@Getter` | `@Setter` |
+| `@Builder` | `@Data` |
+| `@NoArgsConstructor(access = PROTECTED)` | `@AllArgsConstructor` (public) |
+| `@AllArgsConstructor(access = PRIVATE)` | `@ToString` (엔티티, 순환참조 위험) |
+| `@RequiredArgsConstructor` | |
+| `@Slf4j` | |

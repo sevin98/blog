@@ -40,3 +40,6 @@ out/
 .env.local
 .env.production
 .env
+
+### JVM crash logs ###
+hs_err_pid*.log
