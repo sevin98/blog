@@ -57,5 +57,9 @@ war {
 	archiveClassifier = '' // 기본 WAR 파일 (plain war가 아닌 executable war)
 }
 
+bootRun {
+	systemProperty 'spring.profiles.active', System.getenv('SPRING_PROFILES_ACTIVE') ?: 'local'
+}
+
 // README 자동 업데이트 스크립트 로드
 apply from: 'scripts/update-readme.gradle'
