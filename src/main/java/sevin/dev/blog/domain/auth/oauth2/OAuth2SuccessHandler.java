@@ -40,7 +40,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         String token = jwtProvider.generate(githubUsername);
-        log.info("JWT issued for admin: {}", githubUsername);
+        log.info("JWT issued for admin");
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieProvider.createTokenCookie(token).toString());
         // JWT는 httpOnly 쿠키에 설정 완료 → 프론트엔드 대시보드로 리다이렉트

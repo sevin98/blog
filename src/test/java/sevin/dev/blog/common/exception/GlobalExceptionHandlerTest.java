@@ -59,7 +59,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("MethodArgumentNotValidException은 400과 필드 오류 메시지를 반환한다")
+    @DisplayName("BlogException(FORBIDDEN)은 403을 반환한다")
     void handleBlogException_forbiddenCode_returns403() {
         BlogException e = new BlogException(ErrorCode.FORBIDDEN);
 
