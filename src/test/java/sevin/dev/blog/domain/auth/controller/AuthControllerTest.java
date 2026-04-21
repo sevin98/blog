@@ -101,11 +101,13 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("POST /admin/auth/logout - 로그아웃 성공")
+    @DisplayName("POST /admin/auth/logout - 로그아웃 성공 및 쿠키 삭제")
     void logout_success() throws Exception {
         mockMvc.perform(post("/admin/auth/logout").with(csrf()).with(authentication(adminAuth())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(header().string("Set-Cookie",
+                        org.hamcrest.Matchers.containsString(AuthConstants.COOKIE_NAME)));
     }
 
     @Test

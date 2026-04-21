@@ -11,7 +11,7 @@
         </encoder>
     </appender>
 
-    <!-- 파일 출력: production 환경용 (구조화 JSON 형태) -->
+    <!-- 파일 출력: production 환경용 (평문 텍스트; 로그 수집 파이프라인 도입 시 JSON 포맷으로 전환 예정) -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/${APP_NAME}.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">

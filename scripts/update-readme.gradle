@@ -232,9 +232,13 @@ task updateReadme {
 
 task setupHook {
     doLast {
-        def gitHooksDir = new File(project.rootDir, '.git/hooks')
-        if (!gitHooksDir.exists()) {
-            throw new GradleException('.git/hooks 디렉토리를 찾을 수 없습니다.')
+        def gitHooksDirPath = ['git', 'rev-parse', '--git-path', 'hooks'].execute(null, project.rootDir).text.trim()
+        if (!gitHooksDirPath) {
+            throw new GradleException('git rev-parse --git-path hooks 실행에 실패했습니다.')
+        }
+        def gitHooksDir = new File(gitHooksDirPath).absolute ? new File(gitHooksDirPath) : new File(project.rootDir, gitHooksDirPath)
+        if (!gitHooksDir.exists() && !gitHooksDir.mkdirs()) {
+            throw new GradleException("hooks 디렉토리를 찾거나 생성할 수 없습니다: ${gitHooksDir}")
         }
         
         def postCommitHook = new File(gitHooksDir, 'post-commit')
