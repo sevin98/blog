@@ -50,6 +50,9 @@ public class Post {
     private LocalDateTime updatedAt;
 
     public void update(String title, String content, PostStatus status) {
+        if (this.status == PostStatus.DELETED) {
+            throw new IllegalStateException("Cannot update a deleted post");
+        }
         if (status == PostStatus.DELETED) {
             throw new IllegalArgumentException("Use delete() to delete a post");
         }
