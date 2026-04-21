@@ -12,13 +12,16 @@ public class CookieProvider {
 
     private final boolean secure;
     private final long expirationDays;
+    private final String sameSite;
 
     public CookieProvider(
             @Value("${app.cookie.secure}") boolean secure,
-            @Value("${app.jwt.expiration-days}") long expirationDays
+            @Value("${app.jwt.expiration-days}") long expirationDays,
+            @Value("${app.cookie.same-site}") String sameSite
     ) {
         this.secure = secure;
         this.expirationDays = expirationDays;
+        this.sameSite = sameSite;
     }
 
     public ResponseCookie createTokenCookie(String token) {
@@ -35,7 +38,7 @@ public class CookieProvider {
                 .secure(secure)
                 .path("/")
                 .maxAge(maxAge)
-                .sameSite("Lax")
+                .sameSite(sameSite)
                 .build();
     }
 }

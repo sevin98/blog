@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CookieProviderTest {
 
-    private final CookieProvider cookieProvider = new CookieProvider(false, 7);
+    private final CookieProvider cookieProvider = new CookieProvider(false, 7, "Lax");
 
     @Test
     @DisplayName("토큰 쿠키 생성 - HttpOnly, 7일 만료")
@@ -37,9 +37,10 @@ class CookieProviderTest {
     @Test
     @DisplayName("secure=true 설정 시 Secure 속성 포함")
     void createTokenCookie_secure() {
-        CookieProvider secureCookieProvider = new CookieProvider(true, 7);
+        CookieProvider secureCookieProvider = new CookieProvider(true, 7, "None");
         ResponseCookie cookie = secureCookieProvider.createTokenCookie("token");
 
         assertThat(cookie.isSecure()).isTrue();
+        assertThat(cookie.getSameSite()).isEqualTo("None");
     }
 }

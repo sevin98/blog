@@ -3,6 +3,7 @@ package sevin.dev.blog.domain.auth.oauth2;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -37,12 +38,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw new OAuth2AuthenticationException(new OAuth2Error("access_denied"), "허가되지 않은 사용자입니다.");
         }
 
-        adminRepository.findByGithubUsername(githubUsername)
-                .orElseGet(() -> {
-                    log.info("First login — creating admin record for: {}", githubUsername);
-                    return adminRepository.save(Admin.of(githubUsername));
-                });
-
+        provisionAdmin(githubUsername);
         return oAuth2User;
+    }
+
+    private void provisionAdmin(String githubUsername) {
+        if (adminRepository.findByGithubUsername(githubUsername).isPresent()) {
+            return;
+        }
+        try {
+            adminRepository.saveAndFlush(Admin.of(githubUsername));
+            log.info("First login — admin record created for: {}", githubUsername);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 최초 로그인 시 unique 충돌 — 이미 다른 요청이 저장 완료
+            log.warn("Admin record already exists (concurrent creation), skipping: {}", githubUsername);
+        }
     }
 }

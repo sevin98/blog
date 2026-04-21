@@ -32,6 +32,7 @@ app:
   frontend-url: ${FRONTEND_URL:http://localhost:8080/blog}
   cookie:
     secure: false
+    same-site: Lax
 
 logging:
   config: classpath:logback-spring.xml
