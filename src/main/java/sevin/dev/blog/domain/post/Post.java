@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import sevin.dev.blog.common.exception.BlogException;
+import sevin.dev.blog.common.exception.ErrorCode;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -51,10 +53,10 @@ public class Post {
 
     public void update(String title, String content, PostStatus status) {
         if (this.status == PostStatus.DELETED) {
-            throw new IllegalStateException("Cannot update a deleted post");
+            throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
         if (status == PostStatus.DELETED) {
-            throw new IllegalArgumentException("Use delete() to delete a post");
+            throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
         this.title = title;
         this.content = content;

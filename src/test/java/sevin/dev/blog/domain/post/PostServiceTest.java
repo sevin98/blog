@@ -195,6 +195,8 @@ class PostServiceTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
         assertThatThrownBy(() -> postService.update(1L, new UpdatePostRequest("new", "new", PostStatus.DRAFT)))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(BlogException.class)
+                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
     }
 }
