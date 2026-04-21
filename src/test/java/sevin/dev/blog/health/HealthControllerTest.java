@@ -27,6 +27,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeAutoConfiguration = OAuth2ClientWebSecurityAutoConfiguration.class
 )
 @Import(SecurityConfig.class)
+@org.springframework.test.context.TestPropertySource(properties = {
+        "app.frontend-url=http://localhost:3000",
+        "app.cookie.secure=false",
+        "app.cookie.same-site=Lax",
+        "app.jwt.expiration-days=7",
+        "app.admin.github-username=sevin98"
+})
 class HealthControllerTest {
 
     @Autowired

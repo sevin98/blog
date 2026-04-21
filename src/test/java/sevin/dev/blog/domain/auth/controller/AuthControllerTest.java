@@ -39,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "app.frontend-url=http://localhost:3000",
         "app.cookie.secure=false",
+        "app.cookie.same-site=Lax",
         "app.jwt.expiration-days=7",
         "app.admin.github-username=sevin98"
 })
@@ -105,5 +106,12 @@ class AuthControllerTest {
         mockMvc.perform(post("/admin/auth/logout").with(csrf()).with(authentication(adminAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("POST /admin/auth/me - 지원하지 않는 HTTP 메서드는 405 반환")
+    void me_methodNotAllowed() throws Exception {
+        mockMvc.perform(post("/admin/auth/me").with(csrf()).with(authentication(adminAuth())))
+                .andExpect(status().isMethodNotAllowed());
     }
 }
