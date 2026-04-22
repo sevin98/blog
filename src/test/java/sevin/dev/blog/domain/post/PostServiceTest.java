@@ -188,6 +188,19 @@ class PostServiceTest {
     }
 
     @Test
+    @DisplayName("update 시 status를 DELETED로 변경 불가")
+    void update_statusToDeleted_throwsException() {
+        Post post = Post.builder()
+                .title("title").slug("title").content("content").status(PostStatus.DRAFT).build();
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.update(1L, new UpdatePostRequest("new", "new", PostStatus.DELETED)))
+                .isInstanceOf(BlogException.class)
+                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
+    }
+
+    @Test
     @DisplayName("DELETED 게시글은 update 불가")
     void update_deletedPost_throwsException() {
         Post post = Post.builder()
