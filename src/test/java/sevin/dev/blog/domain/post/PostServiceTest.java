@@ -38,7 +38,7 @@ class PostServiceTest {
         when(postRepository.existsBySlug("hello-world")).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("Hello World", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("Hello World", "content"));
 
         assertThat(result.slug()).isEqualTo("hello-world");
     }
@@ -49,7 +49,7 @@ class PostServiceTest {
         when(postRepository.existsBySlug("봄날-산책")).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("봄날 산책", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("봄날 산책", "content"));
 
         assertThat(result.slug()).isEqualTo("봄날-산책");
     }
@@ -61,35 +61,35 @@ class PostServiceTest {
         when(postRepository.existsBySlug("hello-2")).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("hello", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("hello", "content"));
 
         assertThat(result.slug()).isEqualTo("hello-2");
     }
 
     @Test
-    @DisplayName("status null 전달 시 DRAFT로 기본값 설정")
-    void create_nullStatus_defaultsDraft() {
+    @DisplayName("생성 시 status는 항상 DRAFT로 고정")
+    void create_alwaysDefaultsDraft() {
         when(postRepository.existsBySlug(any())).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("title", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("title", "content"));
 
         assertThat(result.status()).isEqualTo(PostStatus.DRAFT);
     }
 
     @Test
-    @DisplayName("존재하지 않는 id 조회 시 POST_NOT_FOUND 예외")
-    void findById_notFound_throwsBlogException() {
-        when(postRepository.findById(99L)).thenReturn(Optional.empty());
+    @DisplayName("findBySlug - 존재하지 않는 slug → POST_NOT_FOUND 예외")
+    void findBySlug_notFound_throwsBlogException() {
+        when(postRepository.findBySlug("not-exist")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.findById(99L))
+        assertThatThrownBy(() -> postService.findBySlug("not-exist"))
                 .isInstanceOf(BlogException.class)
                 .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
                         .isEqualTo(ErrorCode.POST_NOT_FOUND));
     }
 
     @Test
-    @DisplayName("수정 시 slug 변경 없음")
+    @DisplayName("update - slug 변경 없이 title/content만 수정")
     void update_titleChanged_slugUnchanged() {
         Post post = Post.builder()
                 .title("old title")
@@ -97,17 +97,67 @@ class PostServiceTest {
                 .content("old content")
                 .status(PostStatus.DRAFT)
                 .build();
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findBySlug("old-title")).thenReturn(Optional.of(post));
 
-        postService.update(1L, new UpdatePostRequest("new title", "new content", PostStatus.PUBLISHED));
+        postService.update("old-title", new UpdatePostRequest("new title", "new content"));
 
         assertThat(post.getSlug()).isEqualTo("old-title");
         assertThat(post.getTitle()).isEqualTo("new title");
-        assertThat(post.getStatus()).isEqualTo(PostStatus.PUBLISHED);
+        assertThat(post.getStatus()).isEqualTo(PostStatus.DRAFT);
     }
 
     @Test
-    @DisplayName("delete 호출 시 status가 DELETED로 변경")
+    @DisplayName("update - DELETED 게시글은 수정 불가")
+    void update_deletedPost_throwsException() {
+        Post post = Post.builder()
+                .title("title").slug("title").content("content").status(PostStatus.DELETED).build();
+        when(postRepository.findBySlug("title")).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.update("title", new UpdatePostRequest("new", "new")))
+                .isInstanceOf(BlogException.class)
+                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
+    }
+
+    @Test
+    @DisplayName("publish - DRAFT → PUBLISHED 상태 전이")
+    void publish_draftPost_becomesPublished() {
+        Post post = Post.builder()
+                .title("title").slug("hello-world").content("content").status(PostStatus.DRAFT).build();
+        when(postRepository.findBySlug("hello-world")).thenReturn(Optional.of(post));
+
+        PostResponse result = postService.publish("hello-world");
+
+        assertThat(post.getStatus()).isEqualTo(PostStatus.PUBLISHED);
+        assertThat(result.status()).isEqualTo(PostStatus.PUBLISHED);
+    }
+
+    @Test
+    @DisplayName("publish - DELETED 게시글은 발행 불가")
+    void publish_deletedPost_throwsException() {
+        Post post = Post.builder()
+                .title("title").slug("title").content("content").status(PostStatus.DELETED).build();
+        when(postRepository.findBySlug("title")).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.publish("title"))
+                .isInstanceOf(BlogException.class)
+                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
+    }
+
+    @Test
+    @DisplayName("publish - 존재하지 않는 slug → POST_NOT_FOUND 예외")
+    void publish_notFound_throwsBlogException() {
+        when(postRepository.findBySlug("not-exist")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> postService.publish("not-exist"))
+                .isInstanceOf(BlogException.class)
+                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
+                        .isEqualTo(ErrorCode.POST_NOT_FOUND));
+    }
+
+    @Test
+    @DisplayName("delete - status가 DELETED로 변경")
     void delete_setsStatusDeleted() {
         Post post = Post.builder()
                 .title("title")
@@ -115,19 +165,19 @@ class PostServiceTest {
                 .content("content")
                 .status(PostStatus.PUBLISHED)
                 .build();
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.findBySlug("title")).thenReturn(Optional.of(post));
 
-        postService.delete(1L);
+        postService.delete("title");
 
         assertThat(post.getStatus()).isEqualTo(PostStatus.DELETED);
     }
 
     @Test
-    @DisplayName("delete 시 존재하지 않는 id → POST_NOT_FOUND 예외")
+    @DisplayName("delete - 존재하지 않는 slug → POST_NOT_FOUND 예외")
     void delete_notFound_throwsBlogException() {
-        when(postRepository.findById(99L)).thenReturn(Optional.empty());
+        when(postRepository.findBySlug("not-exist")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.delete(99L))
+        assertThatThrownBy(() -> postService.delete("not-exist"))
                 .isInstanceOf(BlogException.class)
                 .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
                         .isEqualTo(ErrorCode.POST_NOT_FOUND));
@@ -168,7 +218,7 @@ class PostServiceTest {
         when(postRepository.existsBySlug(any())).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("!!!@@@", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("!!!@@@", "content"));
 
         assertThat(result.slug()).isNotEmpty();
         assertThat(result.slug()).doesNotContain("!!!");
@@ -182,34 +232,8 @@ class PostServiceTest {
         when(postRepository.existsBySlug("hello-3")).thenReturn(false);
         when(postRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PostResponse result = postService.create(new CreatePostRequest("hello", "content", null));
+        PostResponse result = postService.create(new CreatePostRequest("hello", "content"));
 
         assertThat(result.slug()).isEqualTo("hello-3");
-    }
-
-    @Test
-    @DisplayName("update 시 status를 DELETED로 변경 불가")
-    void update_statusToDeleted_throwsException() {
-        Post post = Post.builder()
-                .title("title").slug("title").content("content").status(PostStatus.DRAFT).build();
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-
-        assertThatThrownBy(() -> postService.update(1L, new UpdatePostRequest("new", "new", PostStatus.DELETED)))
-                .isInstanceOf(BlogException.class)
-                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
-                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
-    }
-
-    @Test
-    @DisplayName("DELETED 게시글은 update 불가")
-    void update_deletedPost_throwsException() {
-        Post post = Post.builder()
-                .title("title").slug("title").content("content").status(PostStatus.DELETED).build();
-        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
-
-        assertThatThrownBy(() -> postService.update(1L, new UpdatePostRequest("new", "new", PostStatus.DRAFT)))
-                .isInstanceOf(BlogException.class)
-                .satisfies(e -> assertThat(((BlogException) e).getErrorCode())
-                        .isEqualTo(ErrorCode.INVALID_STATUS_TRANSITION));
     }
 }

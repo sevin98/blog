@@ -101,7 +101,7 @@ class PostControllerTest {
                         .with(authentication(adminAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreatePostRequest("Hello World", "content", null))))
+                                new CreatePostRequest("Hello World", "content"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.slug").value("hello-world"));
@@ -114,7 +114,7 @@ class PostControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new CreatePostRequest("title", "content", null))))
+                                new CreatePostRequest("title", "content"))))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -149,69 +149,104 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("GET /admin/posts/{id} - 단건 조회 200 반환")
-    void findById_returns200() throws Exception {
-        when(postService.findById(1L)).thenReturn(sampleResponse());
+    @DisplayName("GET /admin/posts/{slug} - 단건 조회 200 반환")
+    void findBySlug_returns200() throws Exception {
+        when(postService.findBySlug("hello-world")).thenReturn(sampleResponse());
 
-        mockMvc.perform(get("/admin/posts/1")
+        mockMvc.perform(get("/admin/posts/hello-world")
                         .with(authentication(adminAuth())))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(1));
+                .andExpect(jsonPath("$.data.slug").value("hello-world"));
     }
 
     @Test
-    @DisplayName("GET /admin/posts/{id} - 미인증 시 401 반환")
-    void findById_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(get("/admin/posts/1"))
+    @DisplayName("GET /admin/posts/{slug} - 미인증 시 401 반환")
+    void findBySlug_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(get("/admin/posts/hello-world"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("GET /admin/posts/{id} - 존재하지 않으면 404 반환")
-    void findById_notFound_returns404() throws Exception {
-        when(postService.findById(99L)).thenThrow(new BlogException(ErrorCode.POST_NOT_FOUND));
+    @DisplayName("GET /admin/posts/{slug} - 존재하지 않으면 404 반환")
+    void findBySlug_notFound_returns404() throws Exception {
+        when(postService.findBySlug("not-exist")).thenThrow(new BlogException(ErrorCode.POST_NOT_FOUND));
 
-        mockMvc.perform(get("/admin/posts/99")
+        mockMvc.perform(get("/admin/posts/not-exist")
                         .with(authentication(adminAuth())))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error.code").value("POST_NOT_FOUND"));
     }
 
     @Test
-    @DisplayName("PUT /admin/posts/{id} - 수정 200 반환")
+    @DisplayName("PATCH /admin/posts/{slug} - 수정 200 반환")
     void update_returns200() throws Exception {
         PostResponse updated = new PostResponse(1L, UUID.randomUUID(), "new title", "hello-world",
-                "new content", PostStatus.PUBLISHED,
+                "new content", PostStatus.DRAFT,
                 LocalDateTime.now(), LocalDateTime.now());
-        when(postService.update(eq(1L), any())).thenReturn(updated);
+        when(postService.update(eq("hello-world"), any())).thenReturn(updated);
 
-        mockMvc.perform(put("/admin/posts/1")
+        mockMvc.perform(patch("/admin/posts/hello-world")
                         .with(csrf())
                         .with(authentication(adminAuth()))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new UpdatePostRequest("new title", "new content", PostStatus.PUBLISHED))))
+                                new UpdatePostRequest("new title", "new content"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("new title"));
+    }
+
+    @Test
+    @DisplayName("PATCH /admin/posts/{slug} - 미인증 시 401 반환")
+    void update_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(patch("/admin/posts/hello-world")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new UpdatePostRequest("title", "content"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("PATCH /admin/posts/{slug}/publish - 발행 200 반환")
+    void publish_returns200() throws Exception {
+        PostResponse published = new PostResponse(1L, UUID.randomUUID(), "Hello World", "hello-world",
+                "content", PostStatus.PUBLISHED,
+                LocalDateTime.now(), LocalDateTime.now());
+        when(postService.publish("hello-world")).thenReturn(published);
+
+        mockMvc.perform(patch("/admin/posts/hello-world/publish")
+                        .with(csrf())
+                        .with(authentication(adminAuth())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PUBLISHED"));
     }
 
     @Test
-    @DisplayName("PUT /admin/posts/{id} - 미인증 시 401 반환")
-    void update_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(put("/admin/posts/1")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new UpdatePostRequest("title", "content", PostStatus.DRAFT))))
+    @DisplayName("PATCH /admin/posts/{slug}/publish - 미인증 시 401 반환")
+    void publish_unauthenticated_returns401() throws Exception {
+        mockMvc.perform(patch("/admin/posts/hello-world/publish").with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("DELETE /admin/posts/{id} - soft delete 200 반환")
-    void delete_returns200() throws Exception {
-        doNothing().when(postService).delete(1L);
+    @DisplayName("PATCH /admin/posts/{slug}/publish - DELETED 게시글은 422 반환")
+    void publish_deletedPost_returns422() throws Exception {
+        when(postService.publish("deleted-post"))
+                .thenThrow(new BlogException(ErrorCode.INVALID_STATUS_TRANSITION));
 
-        mockMvc.perform(delete("/admin/posts/1")
+        mockMvc.perform(patch("/admin/posts/deleted-post/publish")
+                        .with(csrf())
+                        .with(authentication(adminAuth())))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error.code").value("INVALID_STATUS_TRANSITION"));
+    }
+
+    @Test
+    @DisplayName("DELETE /admin/posts/{slug} - soft delete 200 반환")
+    void delete_returns200() throws Exception {
+        doNothing().when(postService).delete("hello-world");
+
+        mockMvc.perform(delete("/admin/posts/hello-world")
                         .with(csrf())
                         .with(authentication(adminAuth())))
                 .andExpect(status().isOk())
@@ -219,9 +254,9 @@ class PostControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE /admin/posts/{id} - 미인증 시 401 반환")
+    @DisplayName("DELETE /admin/posts/{slug} - 미인증 시 401 반환")
     void delete_unauthenticated_returns401() throws Exception {
-        mockMvc.perform(delete("/admin/posts/1").with(csrf()))
+        mockMvc.perform(delete("/admin/posts/hello-world").with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
 }
