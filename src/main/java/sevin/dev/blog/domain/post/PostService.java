@@ -23,15 +23,14 @@ public class PostService {
 
     private final PostRepository postRepository;
 
-    @Transactional
+    @Transactional(noRollbackFor = DataIntegrityViolationException.class)
     public PostResponse create(CreatePostRequest request) {
         String slug = generateSlug(request.title());
-        PostStatus status = request.status() != null ? request.status() : PostStatus.DRAFT;
         Post post = Post.builder()
                 .title(request.title())
                 .slug(slug)
                 .content(request.content())
-                .status(status)
+                .status(PostStatus.DRAFT)
                 .build();
         try {
             return PostResponse.from(postRepository.save(post));
@@ -41,7 +40,7 @@ public class PostService {
                     .title(request.title())
                     .slug(slug + "-" + UUID.randomUUID().toString().substring(0, 8))
                     .content(request.content())
-                    .status(status)
+                    .status(PostStatus.DRAFT)
                     .build();
             return PostResponse.from(postRepository.save(post));
         }
@@ -54,23 +53,31 @@ public class PostService {
         return postRepository.findAll(pageable).map(PostResponse::from);
     }
 
-    public PostResponse findById(Long id) {
-        return postRepository.findById(id)
+    public PostResponse findBySlug(String slug) {
+        return postRepository.findBySlug(slug)
                 .map(PostResponse::from)
                 .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
     }
 
     @Transactional
-    public PostResponse update(Long id, UpdatePostRequest request) {
-        Post post = postRepository.findById(id)
+    public PostResponse update(String slug, UpdatePostRequest request) {
+        Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
-        post.update(request.title(), request.content(), request.status());
+        post.update(request.title(), request.content());
         return PostResponse.from(post);
     }
 
     @Transactional
-    public void delete(Long id) {
-        Post post = postRepository.findById(id)
+    public PostResponse publish(String slug) {
+        Post post = postRepository.findBySlug(slug)
+                .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
+        post.publish();
+        return PostResponse.from(post);
+    }
+
+    @Transactional
+    public void delete(String slug) {
+        Post post = postRepository.findBySlug(slug)
                 .orElseThrow(() -> new BlogException(ErrorCode.POST_NOT_FOUND));
         post.delete();
     }

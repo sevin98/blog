@@ -8,9 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,21 +39,26 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.ok(postService.findAll(status, pageable)));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<PostResponse>> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.ok(postService.findById(id)));
+    @GetMapping("/{slug}")
+    public ResponseEntity<ApiResponse<PostResponse>> findBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.findBySlug(slug)));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{slug}")
     public ResponseEntity<ApiResponse<PostResponse>> update(
-            @PathVariable Long id,
+            @PathVariable String slug,
             @RequestBody @Valid UpdatePostRequest request) {
-        return ResponseEntity.ok(ApiResponse.ok(postService.update(id, request)));
+        return ResponseEntity.ok(ApiResponse.ok(postService.update(slug, request)));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
-        postService.delete(id);
+    @PatchMapping("/{slug}/publish")
+    public ResponseEntity<ApiResponse<PostResponse>> publish(@PathVariable String slug) {
+        return ResponseEntity.ok(ApiResponse.ok(postService.publish(slug)));
+    }
+
+    @DeleteMapping("/{slug}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String slug) {
+        postService.delete(slug);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 }

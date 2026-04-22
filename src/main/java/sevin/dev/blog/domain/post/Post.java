@@ -51,16 +51,19 @@ public class Post {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    public void update(String title, String content, PostStatus status) {
+    public void update(String title, String content) {
         if (this.status == PostStatus.DELETED) {
-            throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
-        }
-        if (status == PostStatus.DELETED) {
             throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
         }
         this.title = title;
         this.content = content;
-        this.status = status;
+    }
+
+    public void publish() {
+        if (this.status == PostStatus.DELETED) {
+            throw new BlogException(ErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        this.status = PostStatus.PUBLISHED;
     }
 
     public void delete() {
